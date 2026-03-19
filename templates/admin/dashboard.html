@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — VoiceUp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-voiceup navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="#"><i class="fas fa-shield-alt me-2"></i>VoiceUp Admin</a>
+    <div class="d-flex align-items-center gap-3 ms-auto">
+      <button class="btn btn-sm theme-toggle" id="themeToggle"><i class="fas fa-moon" id="themeIcon"></i></button>
+      {% if session.get("is_super_admin") %}
+      <a href="{{ url_for('manage_admins') }}" class="btn btn-sm btn-warning text-dark fw-semibold">
+        <i class="fas fa-crown me-1"></i>Manage Admins
+      </a>
+      {% endif %}
+      <a href="{{ url_for('admin_profile') }}" class="btn btn-sm btn-outline-light">
+  <i class="fas fa-user me-1"></i>Profile
+</a>
+<span class="text-white opacity-75 small"><i class="fas fa-user me-1"></i>{{ session.admin_name }}</span>
+      <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light">
+        <i class="fas fa-sign-out-alt me-1"></i>Logout
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm">
+      {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3">
+        <div class="stat-mini-number">{{ stats.total }}</div>
+        <div class="stat-mini-label">Total</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3 warning">
+        <div class="stat-mini-number">{{ stats.pending }}</div>
+        <div class="stat-mini-label">Pending</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3 info">
+        <div class="stat-mini-number">{{ stats.under_review }}</div>
+        <div class="stat-mini-label">Reviewing</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3 success">
+        <div class="stat-mini-number">{{ stats.resolved }}</div>
+        <div class="stat-mini-label">Resolved</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3 danger">
+        <div class="stat-mini-number">{{ stats.overdue }}</div>
+        <div class="stat-mini-label">Overdue</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card-mini text-center p-3">
+        <div class="stat-mini-number">{{ avg_rating }}<small style="font-size:.6em">★</small></div>
+        <div class="stat-mini-label">Avg Rating</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Monthly Submissions</h6>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('export_csv') }}" class="btn btn-sm btn-outline-success">
+              <i class="fas fa-file-csv me-1"></i>CSV
+            </a>
+            <a href="{{ url_for('export_report') }}" class="btn btn-sm btn-outline-primary" target="_blank">
+              <i class="fas fa-file-alt me-1"></i>Report
+            </a>
+            <a href="{{ url_for('admin_leaderboard') }}" class="btn btn-sm btn-outline-warning">
+              <i class="fas fa-trophy me-1"></i>Leaderboard
+            </a>
+            <a href="{{ url_for('ai_trends') }}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-brain me-1"></i>AI Trends
+            </a>
+            {% if session.get('is_super_admin') %}
+            <a href="{{ url_for('manage_users') }}" class="btn btn-sm btn-outline-info">
+              <i class="fas fa-users me-1"></i>Users
+            </a>
+            <a href="{{ url_for('system_settings') }}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-cog me-1"></i><a href="{{ url_for('departments') }}" class="btn btn-sm btn-outline-primary">
+  <i class="fas fa-building me-1"></i>Departments
+</a>
+<a href="{{ url_for('email_settings') }}" class="btn btn-sm btn-outline-info">
+  <i class="fas fa-envelope me-1"></i>Email
+</a>
+<a href="{{ url_for('pdf_report') }}" class="btn btn-sm btn-outline-danger" target="_blank">
+  <i class="fas fa-file-pdf me-1"></i>PDF Report
+</a>Settings
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body"><canvas id="monthlyChart" height="100"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header border-0 pt-4 px-4">
+          <h6 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>By Category</h6>
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="catChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <input type="text" name="search" class="form-control form-control-sm"
+                 placeholder="Search title, ID..." value="{{ search }}">
+        </div>
+        <div class="col-md-2">
+          <select name="status" class="form-select form-select-sm">
+            <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Status</option>
+            {% for s in ['pending','under_review','resolved','rejected'] %}
+            <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s|replace('_',' ')|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="category" class="form-select form-select-sm">
+            <option value="all" {% if category_filter=='all' %}selected{% endif %}>All Category</option>
+            {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
+            <option value="{{ cat }}" {% if category_filter==cat %}selected{% endif %}>{{ cat|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="priority" class="form-select form-select-sm">
+            <option value="all" {% if priority_filter=='all' %}selected{% endif %}>All Priority</option>
+            {% for p in ['urgent','high','medium','low'] %}
+            <option value="{{ p }}" {% if priority_filter==p %}selected{% endif %}>{{ p|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm flex-grow-1"><i class="fas fa-search me-1"></i>Search</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Suggestions Table -->
+  <form method="POST" action="/admin/bulk-update" id="bulkForm">
+  <div class="card shadow-sm">
+    <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold mb-0">Suggestions ({{ total }})</h6>
+      <div class="d-flex gap-2 align-items-center" id="bulkControls" style="display:none!important">
+        <span class="text-muted small" id="selectedCount">0 selected</span>
+        <select name="bulk_status" class="form-select form-select-sm" style="width:auto">
+          <option value="">Change Status To...</option>
+          <option value="pending">Pending</option>
+          <option value="under_review">Under Review</option>
+          <option value="resolved">Resolved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">Clear</button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="px-4"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>SLA</th>
+            <th>Votes</th>
+            <th>Assigned</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in suggestions %}
+          <tr>
+            <td class="px-4"><input type="checkbox" name="suggestion_ids" value="{{ s.id }}" class="row-check" onchange="updateBulkControls()"></td>
+            <td><code class="small">{{ s.suggestion_id }}</code></td>
+            <td>
+              <div class="fw-semibold">{{ s.title[:40] }}{% if s.title|length > 40 %}...{% endif %}</div>
+              <small class="text-muted">{{ s.fullname }}{% if s.is_anonymous %} (anon){% endif %}</small>
+            </td>
+            <td><span class="badge badge-category">{{ s.category|title }}</span></td>
+            <td><span class="badge badge-priority-{{ s.priority }}">{{ s.priority|title }}</span></td>
+            <td><span class="badge badge-status-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span></td>
+            <td>
+              {% set sla = s.sla_status %}
+              <span class="badge {% if sla=='overdue' %}bg-danger{% elif sla=='at_risk' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                {{ sla|replace('_',' ')|title }}
+              </span>
+            </td>
+            <td><span class="badge bg-light text-dark border"><i class="fas fa-thumbs-up me-1"></i>{{ s.vote_count }}</span></td>
+            <td><small class="text-muted">{{ s.assigned_name or '—' }}</small></td>
+            <td><small class="text-muted">{{ s.created_at.strftime('%b %d') if s.created_at else '' }}</small></td>
+            <td>
+              <a href="{{ url_for('admin_suggestion_detail', sid=s.id) }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer border-0">
+      <nav>
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          {% for p in range(1, total_pages+1) %}
+          <li class="page-item {% if p==page %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}&status={{ status_filter }}&category={{ category_filter }}&priority={{ priority_filter }}&search={{ search }}">{{ p }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function toggleAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+  updateBulkControls();
+}
+function updateBulkControls() {
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  const controls = document.getElementById('bulkControls');
+  const count = document.getElementById('selectedCount');
+  if (checked > 0) {
+    controls.style.display = 'flex';
+    count.textContent = checked + ' selected';
+  } else {
+    controls.style.display = 'none!important';
+  }
+}
+function clearSelection() {
+  document.querySelectorAll('.row-check, #selectAll').forEach(c => c.checked = false);
+  document.getElementById('bulkControls').style.display = 'none!important';
+}
+</script>
+<script>
+const monthly = {{ monthly | tojson }};
+const months  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+new Chart(document.getElementById('monthlyChart'), {
+  type:'bar',
+  data:{
+    labels:months,
+    datasets:[{label:'Submissions',data:monthly,backgroundColor:'rgba(99,102,241,0.2)',borderColor:'rgba(99,102,241,1)',borderWidth:2,borderRadius:6}]
+  },
+  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+});
+
+const catStats = {{ cat_stats | tojson }};
+new Chart(document.getElementById('catChart'), {
+  type:'doughnut',
+  data:{
+    labels: catStats.map(c=>c.category),
+    datasets:[{data:catStats.map(c=>c.cnt),backgroundColor:['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899'],borderWidth:0}]
+  },
+  options:{plugins:{legend:{position:'bottom'}},cutout:'60%'}
+});
+</script>
+</body>f
+</html>

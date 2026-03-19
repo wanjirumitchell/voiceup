@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Suggestion Templates{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="fas fa-file-alt me-2 text-primary"></i>Suggestion Templates</h2>
+    <p class="text-muted mb-0">Choose a template to get started quickly</p>
+  </div>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-pen me-2"></i>Write from Scratch
+  </a>
+</div>
+
+<div class="row g-4">
+  {% for t in templates %}
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100 template-card">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge badge-category">{{ t.category|title }}</span>
+          <span class="badge badge-priority-{{ t.priority }}">{{ t.priority|title }}</span>
+        </div>
+        <h6 class="fw-bold mb-2">{{ t.title }}</h6>
+        <p class="text-muted small mb-3">{{ t.description[:120] }}...</p>
+        <a href="{{ url_for('submit_suggestion') }}?template={{ t.id }}"
+           class="btn btn-primary btn-sm w-100">
+          <i class="fas fa-magic me-2"></i>Use This Template
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

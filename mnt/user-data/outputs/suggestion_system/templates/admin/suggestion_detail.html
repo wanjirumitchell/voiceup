@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Review: {{ suggestion.title }} — Admin{% endblock %}
+
+{% block content %}
+<div class="page-container narrow">
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <span>›</span>
+        <span>{{ suggestion.suggestion_id }}</span>
+      </div>
+      <h1>Review Suggestion</h1>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn-ghost">← Back</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }} inline-flash">
+      <span>{% if cat=='success'%}✓{%elif cat=='danger'%}✕{%else%}ℹ{%endif%}</span>{{ msg }}
+    </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <div class="detail-layout">
+    <div class="detail-main">
+
+      <!-- Suggestion Content -->
+      <div class="detail-card">
+        <div class="admin-suggestion-header">
+          <div>
+            <h2>{{ suggestion.title }}</h2>
+            <div class="sc-meta" style="margin-top:.5rem">
+              <span class="sc-id">{{ suggestion.suggestion_id }}</span>
+              <span class="sc-sep">·</span>
+              <span class="sc-category-badge cat-{{ suggestion.category }}">{{ suggestion.category | replace('_',' ') | title }}</span>
+              <span class="sc-sep">·</span>
+              <span>{{ suggestion.created_at.strftime('%B %d, %Y at %H:%M') }}</span>
+            </div>
+          </div>
+          <span class="status-badge status-{{ suggestion.status }} large">{{ suggestion.status | replace('_',' ') | title }}</span>
+        </div>
+        <div class="detail-description" style="margin-top:1.5rem">{{ suggestion.description }}</div>
+      </div>
+
+      <!-- Update Status -->
+      <div class="detail-card admin-action-card">
+        <h3>Update Status</h3>
+        <form method="POST">
+          <input type="hidden" name="action" value="update_status"/>
+          <div class="status-update-row">
+            <select name="status" class="filter-select large-select">
+              {% for val, label in [('pending','Pending'),('under_review','Under Review'),('in_progress','In Progress'),('resolved','Resolved'),('rejected','Rejected')] %}
+              <option value="{{ val }}" {% if suggestion.status==val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn-primary">Update Status</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Add Response -->
+      <div class="detail-card admin-action-card">
+        <h3>Add Response</h3>
+        <p class="action-desc">Your response will be visible to the person who submitted this suggestion.</p>
+        <form method="POST" id="responseForm">
+          <input type="hidden" name="action" value="add_response"/>
+          <div class="form-group">
+            <div class="input-wrap textarea-wrap">
+              <textarea name="response_text" rows="5" id="responseText"
+                        placeholder="Write your response to this suggestion…"
+                        maxlength="2000"></textarea>
+            </div>
+            <div class="input-footer">
+              <span></span>
+              <span class="char-count" id="respCount">0/2000</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="respBtn">
+              <span class="btn-text">Post Response</span>
+              <span class="btn-spinner hidden">⟳</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Existing Responses -->
+      <div class="detail-card">
+        <h3>
+          Responses History
+          <span class="response-count">{{ responses|length }}</span>
+        </h3>
+        {% if responses %}
+        <div class="responses-list">
+          {% for r in responses %}
+          <div class="response-item admin-response-item">
+            <div class="response-header">
+              <div class="response-avatar admin-av">A</div>
+              <div>
+                <strong>{{ r.admin_name | title }}</strong>
+                <small>Admin · {{ r.created_at.strftime('%B %d, %Y at %H:%M') }}</small>
+              </div>
+            </div>
+            <div class="response-text">{{ r.response_text }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-responses">
+          <span>💬</span><p>No responses have been added yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Sidebar: Submitter Info -->
+    <div class="detail-sidebar">
+      <div class="detail-card meta-card">
+        <h4>Suggestion Info</h4>
+        <div class="meta-row">
+          <span class="meta-label">Tracking ID</span>
+          <span class="meta-val mono">{{ suggestion.suggestion_id }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Current Status</span>
+          <span class="status-badge status-{{ suggestion.status }}">{{ suggestion.status | replace('_',' ') | title }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Priority</span>
+          <span class="priority-badge pri-{{ suggestion.priority }}">{{ suggestion.priority | title }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Category</span>
+          <span>{{ suggestion.category | replace('_',' ') | title }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Submitted</span>
+          <span>{{ suggestion.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+      </div>
+
+      <div class="detail-card meta-card">
+        <h4>Submitter Details</h4>
+        {% if suggestion.is_anonymous %}
+        <div class="anon-info-block">
+          <span class="anon-lock">🔒</span>
+          <p>This suggestion was submitted anonymously. Identity is hidden by system policy.</p>
+        </div>
+        {% else %}
+        <div class="submitter-info">
+          <div class="submitter-avatar">{{ suggestion.fullname[0].upper() }}</div>
+          <div>
+            <div class="submitter-name">{{ suggestion.fullname }}</div>
+            <div class="submitter-role">{{ suggestion.user_role | title }}</div>
+            <div class="submitter-email">{{ suggestion.email }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const responseText = document.getElementById('responseText');
+const respCount    = document.getElementById('respCount');
+if(responseText) {
+  responseText.addEventListener('input', () => {
+    respCount.textContent = responseText.value.length + '/2000';
+  });
+}
+</script>
+{% endblock %}

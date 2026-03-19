@@ -1,0 +1,340 @@
+{# ─── SUGGESTION PROGRESS TIMELINE ─────────────────────────────────────────── #}
+{# Save this file as: templates/_timeline.html                                  #}
+{# Then include it in suggestion_detail.html with: {% include '_timeline.html' %}#}
+
+<div class="timeline-card">
+  <div class="timeline-header">
+    <h5><i class="fas fa-stream"></i> Suggestion Journey</h5>
+    <span class="timeline-count">{{ timeline|length }} event{{ 's' if timeline|length != 1 }}</span>
+  </div>
+
+  <div class="timeline-wrapper">
+
+    {# ── Always show SUBMITTED as first step ── #}
+    <div class="timeline-step done">
+      <div class="timeline-icon submitted">
+        <i class="fas fa-paper-plane"></i>
+      </div>
+      <div class="timeline-content">
+        <div class="tl-title">Suggestion Submitted</div>
+        <div class="tl-meta">
+          <span><i class="fas fa-user"></i> {{ suggestion.get('submitter_name', 'You') }}</span>
+          <span><i class="fas fa-clock"></i> {{ suggestion['created_at'].strftime('%b %d, %Y %H:%M') if suggestion['created_at'] else '' }}</span>
+        </div>
+        <div class="tl-badge category">{{ suggestion['category']|title }}</div>
+      </div>
+    </div>
+
+    {# ── Render each logged event ── #}
+    {% for event in timeline %}
+      {% if event['event_type'] == 'status_changed' %}
+
+        {% set status_map = {
+          'pending':      ('fa-hourglass-half',  'pending',     'Pending Review'),
+          'under_review': ('fa-search',          'reviewing',   'Under Review'),
+          'resolved':     ('fa-check-circle',    'resolved',    'Resolved'),
+          'rejected':     ('fa-times-circle',    'rejected',    'Rejected'),
+          'merged':       ('fa-code-branch',     'merged',      'Merged')
+        } %}
+        {% set icon, cls, label = status_map.get(event['new_value'], ('fa-circle', 'default', event['new_value']|title)) %}
+
+        <div class="timeline-step done">
+          <div class="timeline-icon {{ cls }}">
+            <i class="fas {{ icon }}"></i>
+          </div>
+          <div class="timeline-content">
+            <div class="tl-title">Status Changed to <strong>{{ label }}</strong></div>
+            <div class="tl-meta">
+              <span><i class="fas fa-user-shield"></i> {{ event['actor_name'] }}</span>
+              <span><i class="fas fa-clock"></i> {{ event['created_at'].strftime('%b %d, %Y %H:%M') }}</span>
+            </div>
+            {% if event['old_value'] %}
+              <div class="tl-from">From: <span class="badge-old">{{ event['old_value']|replace('_',' ')|title }}</span> → <span class="badge-new">{{ event['new_value']|replace('_',' ')|title }}</span></div>
+            {% endif %}
+          </div>
+        </div>
+
+      {% elif event['event_type'] == 'response_added' %}
+        <div class="timeline-step done">
+          <div class="timeline-icon response">
+            <i class="fas fa-comment-dots"></i>
+          </div>
+          <div class="timeline-content">
+            <div class="tl-title">Admin Response Added</div>
+            <div class="tl-meta">
+              <span><i class="fas fa-user-shield"></i> {{ event['actor_name'] }}</span>
+              <span><i class="fas fa-clock"></i> {{ event['created_at'].strftime('%b %d, %Y %H:%M') }}</span>
+            </div>
+            {% if event['note'] %}
+              <div class="tl-note">"{{ event['note'] }}"</div>
+            {% endif %}
+          </div>
+        </div>
+
+      {% elif event['event_type'] == 'assigned' %}
+        <div class="timeline-step done">
+          <div class="timeline-icon assigned">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="timeline-content">
+            <div class="tl-title">Assigned to <strong>{{ event['new_value'] }}</strong></div>
+            <div class="tl-meta">
+              <span><i class="fas fa-user-shield"></i> {{ event['actor_name'] }}</span>
+              <span><i class="fas fa-clock"></i> {{ event['created_at'].strftime('%b %d, %Y %H:%M') }}</span>
+            </div>
+          </div>
+        </div>
+
+      {% elif event['event_type'] == 'comment_added' %}
+        <div class="timeline-step done">
+          <div class="timeline-icon comment">
+            <i class="fas fa-comments"></i>
+          </div>
+          <div class="timeline-content">
+            <div class="tl-title">Comment Added</div>
+            <div class="tl-meta">
+              <span><i class="fas fa-user"></i> {{ event['actor_name'] }}</span>
+              <span><i class="fas fa-clock"></i> {{ event['created_at'].strftime('%b %d, %Y %H:%M') }}</span>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    {# ── Final state indicator ── #}
+    {% if suggestion['status'] == 'resolved' %}
+      <div class="timeline-step done final">
+        <div class="timeline-icon resolved">
+          <i class="fas fa-trophy"></i>
+        </div>
+        <div class="timeline-content">
+          <div class="tl-title" style="color:#10b981;font-weight:700;">🎉 Successfully Resolved!</div>
+          <div class="tl-meta">Your suggestion made a difference.</div>
+        </div>
+      </div>
+    {% elif suggestion['status'] == 'rejected' %}
+      <div class="timeline-step done final">
+        <div class="timeline-icon rejected">
+          <i class="fas fa-times-circle"></i>
+        </div>
+        <div class="timeline-content">
+          <div class="tl-title">Suggestion Closed</div>
+          <div class="tl-meta">This suggestion has been reviewed and closed.</div>
+        </div>
+      </div>
+    {% else %}
+      {# Upcoming steps (greyed out) #}
+      {% if suggestion['status'] == 'pending' %}
+        <div class="timeline-step upcoming">
+          <div class="timeline-icon"><i class="fas fa-search"></i></div>
+          <div class="timeline-content">
+            <div class="tl-title">Under Review</div>
+            <div class="tl-meta">Waiting for admin to review</div>
+          </div>
+        </div>
+      {% endif %}
+      {% if suggestion['status'] in ('pending', 'under_review') %}
+        <div class="timeline-step upcoming">
+          <div class="timeline-icon"><i class="fas fa-check-circle"></i></div>
+          <div class="timeline-content">
+            <div class="tl-title">Resolution</div>
+            <div class="tl-meta">Final decision pending</div>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
+  </div>{# end timeline-wrapper #}
+</div>
+
+{# ══ STYLES ══════════════════════════════════════════════════════════════════ #}
+<style>
+.timeline-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  padding: 24px;
+  margin-top: 24px;
+}
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.timeline-header h5 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.timeline-header h5 i { color: #6366f1; margin-right: 8px; }
+.timeline-count {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Wrapper & connector line ── */
+.timeline-wrapper {
+  position: relative;
+  padding-left: 16px;
+}
+.timeline-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 31px;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background: linear-gradient(to bottom, #6366f1, #e2e8f0);
+}
+
+/* ── Individual step ── */
+.timeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  animation: fadeSlideIn 0.4s ease forwards;
+  opacity: 0;
+}
+.timeline-step:nth-child(1)  { animation-delay: 0.05s; }
+.timeline-step:nth-child(2)  { animation-delay: 0.1s;  }
+.timeline-step:nth-child(3)  { animation-delay: 0.15s; }
+.timeline-step:nth-child(4)  { animation-delay: 0.2s;  }
+.timeline-step:nth-child(5)  { animation-delay: 0.25s; }
+.timeline-step:nth-child(6)  { animation-delay: 0.3s;  }
+.timeline-step:nth-child(7)  { animation-delay: 0.35s; }
+.timeline-step:last-child    { margin-bottom: 0; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Icon circle ── */
+.timeline-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  z-index: 1;
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: 0 0 0 3px #fff;
+}
+.timeline-step.done .timeline-icon { color: #fff; }
+
+.timeline-icon.submitted  { background: linear-gradient(135deg,#6366f1,#8b5cf6); }
+.timeline-icon.pending    { background: linear-gradient(135deg,#f59e0b,#d97706); }
+.timeline-icon.reviewing  { background: linear-gradient(135deg,#3b82f6,#2563eb); }
+.timeline-icon.resolved   { background: linear-gradient(135deg,#10b981,#059669); }
+.timeline-icon.rejected   { background: linear-gradient(135deg,#ef4444,#dc2626); }
+.timeline-icon.merged     { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+.timeline-icon.response   { background: linear-gradient(135deg,#06b6d4,#0891b2); }
+.timeline-icon.assigned   { background: linear-gradient(135deg,#f97316,#ea580c); }
+.timeline-icon.comment    { background: linear-gradient(135deg,#84cc16,#65a30d); }
+
+.timeline-step.upcoming .timeline-icon {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  border: 2px dashed #cbd5e1;
+  box-shadow: none;
+}
+
+/* ── Content box ── */
+.timeline-content {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  flex: 1;
+  transition: box-shadow 0.2s;
+}
+.timeline-step.done .timeline-content:hover {
+  box-shadow: 0 4px 12px rgba(99,102,241,0.1);
+}
+.timeline-step.upcoming .timeline-content {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.timeline-step.final .timeline-content {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.tl-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+.tl-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+.tl-meta i { margin-right: 3px; color: #94a3b8; }
+
+.tl-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #6366f1;
+}
+.tl-from {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+.badge-old {
+  background: #fee2e2; color: #dc2626;
+  padding: 1px 8px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.badge-new {
+  background: #dcfce7; color: #16a34a;
+  padding: 1px 8px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.tl-note {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #475569;
+  font-style: italic;
+  background: #fff;
+  padding: 6px 10px;
+  border-left: 3px solid #06b6d4;
+  border-radius: 4px;
+}
+
+/* ── Force light mode always ── */
+.timeline-card,
+.timeline-content,
+.tl-title,
+.tl-meta {
+  color-scheme: light;
+}
+.timeline-card    { background: #ffffff !important; color: #1e293b !important; }
+.timeline-content { background: #f8fafc !important; border-color: #e2e8f0 !important; color: #1e293b !important; }
+.tl-title         { color: #1e293b !important; }
+.tl-meta          { color: #475569 !important; }
+.tl-note          { color: #334155 !important; background: #ffffff !important; }
+.timeline-header h5 { color: #1e293b !important; }
+.timeline-count   { background: #e2e8f0 !important; color: #334155 !important; }
+</style>

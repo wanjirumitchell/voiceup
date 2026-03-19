@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>VoiceUp — Official Report {{ generated_at }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; background: white; }
+
+    .cover { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 60px 50px; min-height: 280px; }
+    .cover h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 8px; }
+    .cover p  { opacity: .85; font-size: 1.1rem; }
+    .cover .badge { background: rgba(255,255,255,.2); border-radius: 20px; padding: 4px 14px; font-size: .85rem; display: inline-block; margin-top: 16px; }
+
+    .section { padding: 40px 50px; border-bottom: 1px solid #f3f4f6; }
+    .section h2 { font-size: 1.3rem; font-weight: 700; color: #6366f1; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 2px solid #6366f1; }
+    .section h3 { font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 12px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-box { background: #f8f9fa; border-radius: 10px; padding: 20px; text-align: center; border-top: 3px solid #6366f1; }
+    .stat-box.green  { border-color: #10b981; }
+    .stat-box.yellow { border-color: #f59e0b; }
+    .stat-box.red    { border-color: #ef4444; }
+    .stat-box.blue   { border-color: #3b82f6; }
+    .stat-num   { font-size: 2.2rem; font-weight: 800; color: #1f2937; }
+    .stat-label { font-size: .8rem; color: #6b7280; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th { background: #6366f1; color: white; padding: 10px 12px; text-align: left; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+    .pending      { background: #fef3c7; color: #92400e; }
+    .under_review { background: #e0e7ff; color: #3730a3; }
+    .resolved     { background: #d1fae5; color: #065f46; }
+    .rejected     { background: #fee2e2; color: #991b1b; }
+
+    .dept-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .dept-bar { height: 8px; background: #e5e7eb; border-radius: 4px; flex: 1; margin: 0 16px; }
+    .dept-fill { height: 100%; background: #6366f1; border-radius: 4px; }
+
+    .footer { background: #f8f9fa; padding: 20px 50px; text-align: center; color: #9ca3af; font-size: .8rem; }
+
+    .satisfaction { font-size: 1.5rem; color: #f59e0b; }
+    .rec-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; display: flex; gap: 12px; }
+    .rec-num  { width: 28px; height: 28px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; flex-shrink: 0; }
+
+    @media print {
+      .no-print { display: none; }
+      .section  { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Print Button -->
+<div class="no-print" style="position:fixed;top:20px;right:20px;z-index:999">
+  <button onclick="window.print()" style="background:#6366f1;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:1rem;cursor:pointer;box-shadow:0 4px 15px rgba(99,102,241,.4)">
+    🖨️ Print / Save PDF
+  </button>
+</div>
+
+<!-- Cover -->
+<div class="cover">
+  <div style="font-size:.9rem;opacity:.7;margin-bottom:12px">OFFICIAL REPORT</div>
+  <h1>VoiceUp Suggestion System</h1>
+  <p>Institutional Analysis & Performance Report</p>
+  <div class="badge">Generated: {{ generated_at }}</div>
+</div>
+
+<!-- Executive Summary -->
+<div class="section">
+  <h2>1. Executive Summary</h2>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num">{{ stats.total }}</div>
+      <div class="stat-label">Total Suggestions</div>
+    </div>
+    <div class="stat-box green">
+      <div class="stat-num">{{ stats.resolved }}</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+    <div class="stat-box yellow">
+      <div class="stat-num">{{ stats.pending }}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-box blue">
+      <div class="stat-num">{{ stats.under_review }}</div>
+      <div class="stat-label">Under Review</div>
+    </div>
+    <div class="stat-box red">
+      <div class="stat-num">{{ stats.overdue }}</div>
+      <div class="stat-label">Overdue SLA</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">{{ total_users }}</div>
+      <div class="stat-label">Registered Users</div>
+    </div>
+  </div>
+
+  {% if resolution_rate %}
+  <p><strong>Resolution Rate:</strong> {{ resolution_rate }}% of submitted suggestions have been resolved.</p>
+  {% endif %}
+  <p style="margin-top:8px"><strong>Average Satisfaction:</strong>
+    <span class="satisfaction">{% for i in range(avg_rating|round|int) %}★{% endfor %}{% for i in range(5 - avg_rating|round|int) %}☆{% endfor %}</span>
+    {{ "%.1f"|format(avg_rating) }}/5.0
+  </p>
+</div>
+
+<!-- Category Breakdown -->
+<div class="section">
+  <h2>2. Category Breakdown</h2>
+  {% for c in cat_stats %}
+  {% set pct = ((c.cnt / stats.total * 100)|round|int) if stats.total > 0 else 0 %}
+  <div class="dept-row">
+    <span style="min-width:150px;font-weight:600">{{ c.category|title }}</span>
+    <div class="dept-bar"><div class="dept-fill" style="width:{{ pct }}%"></div></div>
+    <span style="min-width:80px;text-align:right">{{ c.cnt }} ({{ pct }}%)</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Department Performance -->
+{% if dept_stats %}
+<div class="section">
+  <h2>3. Department Performance</h2>
+  <table>
+    <thead>
+      <tr><th>Department</th><th>Total</th><th>Resolved</th><th>Pending</th><th>Resolution Rate</th></tr>
+    </thead>
+    <tbody>
+      {% for d in dept_stats %}
+      <tr>
+        <td><strong>{{ d.name }}</strong></td>
+        <td>{{ d.total }}</td>
+        <td>{{ d.resolved }}</td>
+        <td>{{ d.pending }}</td>
+        <td>{{ "%.0f"|format(d.resolved / d.total * 100) if d.total > 0 else 0 }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Monthly Trend -->
+<div class="section">
+  <h2>4. Monthly Submission Trend</h2>
+  <table>
+    <thead>
+      <tr><th>Month</th><th>Submissions</th><th>Trend</th></tr>
+    </thead>
+    <tbody>
+      {% set months = ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+      {% for i in range(12) %}
+      {% if monthly[i] > 0 %}
+      <tr>
+        <td>{{ months[i] }}</td>
+        <td>{{ monthly[i] }}</td>
+        <td>
+          <div style="height:8px;background:#e5e7eb;border-radius:4px;width:200px">
+            <div style="height:100%;background:#6366f1;border-radius:4px;width:{{ (monthly[i] / monthly|max * 100)|round }}%"></div>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Recent Suggestions -->
+<div class="section">
+  <h2>5. Recent Suggestions (Last 20)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>ID</th><th>Title</th><th>Category</th><th>Status</th><th>Votes</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for i, s in enumerate(suggestions[:20], 1) %}
+      <tr>
+        <td>{{ i }}</td>
+        <td><code style="font-size:.75rem">{{ s.suggestion_id }}</code></td>
+        <td>{{ s.title[:45] }}</td>
+        <td>{{ s.category|title }}</td>
+        <td><span class="badge {{ s.status }}">{{ s.status|replace('_',' ')|title }}</span></td>
+        <td>{{ s.vote_count }}</td>
+        <td>{{ s.created_at.strftime('%b %d, %Y') if s.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p><strong>VoiceUp Suggestion Management System</strong> — Confidential Report</p>
+  <p>Generated on {{ generated_at }} • This report is for internal use only</p>
+</div>
+
+</body>
+</html>

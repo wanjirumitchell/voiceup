@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard — VoiceUp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .leaderboard-hero {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; padding: 40px 24px; text-align: center;
+      border-radius: 20px; margin-bottom: 32px;
+    }
+    .rank-card {
+      background: #fff; border-radius: 16px;
+      border: 1px solid #e2e8f0; padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 12px; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .rank-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .rank-card.rank-1 { border-color: #fbbf24; background: linear-gradient(135deg, #fffbeb, #fff); }
+    .rank-card.rank-2 { border-color: #94a3b8; background: linear-gradient(135deg, #f8fafc, #fff); }
+    .rank-card.rank-3 { border-color: #cd7c2f; background: linear-gradient(135deg, #fff7ed, #fff); }
+    .rank-badge {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
+    }
+    .rank-1 .rank-badge { background: #fbbf24; color: #fff; }
+    .rank-2 .rank-badge { background: #94a3b8; color: #fff; }
+    .rank-3 .rank-badge { background: #cd7c2f; color: #fff; }
+    .rank-other .rank-badge { background: #f1f5f9; color: #64748b; }
+    .v-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1.1rem; color: #fff; flex-shrink: 0;
+    }
+    .stat-pill {
+      background: #f1f5f9; color: #475569;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .stat-pill.green { background: #dcfce7; color: #16a34a; }
+    .stat-pill.purple { background: #ede9fe; color: #7c3aed; }
+    .my-rank-box {
+      background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+      border: 2px solid #6366f1; border-radius: 16px; padding: 20px 24px;
+      margin-bottom: 28px; display: flex; align-items: center; gap: 16px;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-voiceup">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+      <i class="fas fa-arrow-left me-2"></i>Dashboard
+    </a>
+    <span class="navbar-brand mx-auto fw-bold">🏆 Leaderboard</span>
+    <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light ms-auto">
+      <i class="fas fa-sign-out-alt me-1"></i>Logout
+    </a>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width:700px;">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="alert alert-{{ cat }}">{{ msg|safe }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Hero -->
+  <div class="leaderboard-hero">
+    <div style="font-size:3rem;margin-bottom:8px;">🏆</div>
+    <h2 class="fw-bold mb-1">Top Contributors</h2>
+    <p class="mb-0 opacity-75">Students making a difference through their suggestions</p>
+  </div>
+
+  <!-- My Rank -->
+  <div class="my-rank-box">
+    <div style="font-size:2rem;">🎯</div>
+    <div>
+      <div class="fw-bold text-primary">Your Rank</div>
+      <div class="fw-bold" style="font-size:1.4rem;color:#6366f1;">#{{ my_rank }}</div>
+    </div>
+    <div class="ms-auto text-end">
+      <div class="text-muted small">Keep submitting to climb up!</div>
+      <a href="{{ url_for('submit_suggestion') }}" class="btn btn-sm btn-primary mt-1">
+        <i class="fas fa-plus me-1"></i>Submit Idea
+      </a>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  {% for leader in leaders %}
+  {% set rank = loop.index %}
+  <div class="rank-card rank-{{ rank if rank <= 3 else 'other' }}">
+
+    <!-- Rank Badge -->
+    <div class="rank-badge">
+      {% if rank == 1 %}🥇
+      {% elif rank == 2 %}🥈
+      {% elif rank == 3 %}🥉
+      {% else %}{{ rank }}{% endif %}
+    </div>
+
+    <!-- Avatar -->
+    <div class="v-avatar" style="background:linear-gradient(135deg,
+      {% set colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#06b6d4','#ec4899'] %}
+      {{ colors[loop.index0 % 8] }}, {{ colors[(loop.index0+2) % 8] }});">
+      {{ leader.fullname[0]|upper }}
+    </div>
+
+    <!-- Info -->
+    <div class="flex-grow-1">
+      <div class="fw-bold">{{ leader.fullname }}
+        {% if leader.id == session.user_id %}
+        <span class="badge bg-primary ms-1" style="font-size:0.65rem;">You</span>
+        {% endif %}
+      </div>
+      <div class="text-muted small">{{ leader.role|title }}</div>
+      <div class="mt-1 d-flex gap-2 flex-wrap">
+        <span class="stat-pill purple"><i class="fas fa-lightbulb"></i> {{ leader.total_suggestions }} suggestions</span>
+        <span class="stat-pill green"><i class="fas fa-check"></i> {{ leader.resolved_count or 0 }} resolved</span>
+        <span class="stat-pill"><i class="fas fa-thumbs-up"></i> {{ leader.total_votes or 0 }} votes</span>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="text-end">
+      <div class="fw-bold text-primary" style="font-size:1.3rem;">
+        {{ (leader.total_suggestions * 10) + (leader.resolved_count or 0) * 20 + (leader.total_votes or 0) * 5 }}
+      </div>
+      <div class="text-muted" style="font-size:0.72rem;">points</div>
+    </div>
+
+  </div>
+  {% endfor %}
+
+  {% if not leaders %}
+  <div class="text-center py-5 text-muted">
+    <i class="fas fa-trophy fa-3x mb-3 opacity-25"></i>
+    <p>No submissions yet. Be the first!</p>
+    <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary">Submit a Suggestion</a>
+  </div>
+  {% endif %}
+
+  <!-- Scoring Guide -->
+  <div class="card border-0 shadow-sm mt-4" style="border-radius:16px;">
+    <div class="card-body p-4">
+      <h6 class="fw-bold mb-3"><i class="fas fa-star text-warning me-2"></i>How Points Work</h6>
+      <div class="d-flex gap-3 flex-wrap">
+        <span class="stat-pill purple">+10 per suggestion</span>
+        <span class="stat-pill green">+20 per resolved</span>
+        <span class="stat-pill"><i class="fas fa-thumbs-up"></i> +5 per vote received</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Leaderboard — VoiceUp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-voiceup navbar-expand-lg">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+      <i class="fas fa-arrow-left me-2"></i>VoiceUp Admin
+    </a>
+    <div class="d-flex align-items-center gap-3 ms-auto">
+      <button class="btn btn-sm theme-toggle" id="themeToggle"><i class="fas fa-moon" id="themeIcon"></i></button>
+      <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4">
+  <div class="mb-4">
+    <h3 class="fw-bold mb-1"><i class="fas fa-trophy me-2 text-warning"></i>Admin Performance Leaderboard</h3>
+    <p class="text-muted">See which admins are most active and effective</p>
+  </div>
+
+  <!-- Top 3 Podium -->
+  {% if admins %}
+  <div class="row g-4 mb-5 justify-content-center">
+    {% for i, a in enumerate(admins[:3]) %}
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center p-4 {% if loop.index==1 %}border-warning{% endif %}">
+        <div class="position-relative mb-3">
+          <div class="admin-avatar mx-auto" style="width:60px;height:60px;font-size:1.5rem;
+            {% if loop.index==1 %}background:linear-gradient(135deg,#f59e0b,#d97706){% endif %}">
+            {{ a.username[0]|upper }}
+          </div>
+          {% if loop.index==1 %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+            <i class="fas fa-crown"></i>
+          </span>
+          {% endif %}
+        </div>
+        <div class="fw-bold fs-5">#{{ loop.index }}</div>
+        <div class="fw-semibold">{{ a.username }}</div>
+        <div class="badge {% if a.role=='super_admin' %}bg-warning text-dark{% elif a.role=='admin' %}bg-primary{% else %}bg-secondary{% endif %} mb-2">
+          {{ a.role|replace('_',' ')|title }}
+        </div>
+        <div class="fs-4 fw-bold text-primary">{{ a.total_responses }}</div>
+        <div class="text-muted small">Responses</div>
+        {% if a.avg_satisfaction %}
+        <div class="mt-2">
+          {% for i in range(1,6) %}
+          <i class="fas fa-star {% if i <= (a.avg_satisfaction|round|int) %}text-warning{% else %}text-muted{% endif %} small"></i>
+          {% endfor %}
+          <small class="text-muted">{{ "%.1f"|format(a.avg_satisfaction) }}</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Full Leaderboard Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header border-0 pt-3 px-4">
+      <h6 class="fw-bold mb-0">Full Rankings</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="px-4">Rank</th>
+            <th>Admin</th>
+            <th>Role</th>
+            <th>Responses</th>
+            <th>Assigned</th>
+            <th>Resolved</th>
+            <th>Avg Rating</th>
+            <th>Last Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in admins %}
+          <tr>
+            <td class="px-4 fw-bold">
+              {% if loop.index == 1 %}🥇
+              {% elif loop.index == 2 %}🥈
+              {% elif loop.index == 3 %}🥉
+              {% else %}#{{ loop.index }}{% endif %}
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="admin-avatar {% if a.role=='super_admin' %}warning{% endif %}">
+                  {{ a.username[0]|upper }}
+                </div>
+                <span class="fw-semibold">{{ a.username }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge {% if a.role=='super_admin' %}bg-warning text-dark{% elif a.role=='admin' %}bg-primary{% else %}bg-secondary{% endif %}">
+                {{ a.role|replace('_',' ')|title }}
+              </span>
+            </td>
+            <td><strong class="text-primary">{{ a.total_responses }}</strong></td>
+            <td>{{ a.total_assigned }}</td>
+            <td>
+              <span class="badge bg-success-subtle text-success">{{ a.total_resolved }}</span>
+            </td>
+            <td>
+              {% if a.avg_satisfaction %}
+              <span class="text-warning">
+                {% for i in range(1,6) %}
+                <i class="fas fa-star {% if i <= (a.avg_satisfaction|round|int) %}text-warning{% else %}text-muted{% endif %} small"></i>
+                {% endfor %}
+              </span>
+              <small>{{ "%.1f"|format(a.avg_satisfaction) }}</small>
+              {% else %}
+              <small class="text-muted">No ratings</small>
+              {% endif %}
+            </td>
+            <td>
+              <small class="text-muted">
+                {{ a.last_response.strftime('%b %d, %Y') if a.last_response else 'Never' }}
+              </small>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

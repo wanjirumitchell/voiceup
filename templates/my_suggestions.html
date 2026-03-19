@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}My Suggestions{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h2 class="fw-bold mb-0"><i class="fas fa-list me-2 text-primary"></i>My Suggestions</h2>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>New Suggestion
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <select name="status" class="form-select form-select-sm">
+          <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Statuses</option>
+          {% for s in ['pending','under_review','resolved','rejected'] %}
+          <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select name="category" class="form-select form-select-sm">
+          <option value="all" {% if category_filter=='all' %}selected{% endif %}>All Categories</option>
+          {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
+          <option value="{{ cat }}" {% if category_filter==cat %}selected{% endif %}>{{ cat|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary btn-sm w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if suggestions %}
+<div class="row g-4">
+  {% for s in suggestions %}
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100 suggestion-card">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge badge-status-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span>
+          <span class="badge badge-priority-{{ s.priority }}">{{ s.priority|title }}</span>
+        </div>
+        <h6 class="fw-bold mb-1">
+          <a href="{{ url_for('suggestion_detail', suggestion_id=s.suggestion_id) }}" class="text-decoration-none">
+            {{ s.title }}
+          </a>
+        </h6>
+        <p class="text-muted small mb-2">{{ s.description[:100] }}{% if s.description|length > 100 %}...{% endif %}</p>
+        <div class="d-flex align-items-center justify-content-between mt-auto pt-2 border-top">
+          <div class="d-flex gap-2">
+            <span class="badge badge-category">{{ s.category|title }}</span>
+            {% if s.response_count > 0 %}
+            <span class="badge bg-success-subtle text-success">
+              <i class="fas fa-comment me-1"></i>{{ s.response_count }}
+            </span>
+            {% endif %}
+          </div>
+          <small class="text-muted">{{ s.created_at.strftime('%b %d, %Y') if s.created_at else '' }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% for p in range(1, total_pages+1) %}
+    <li class="page-item {% if p==page %}active{% endif %}">
+      <a class="page-link" href="?page={{ p }}&status={{ status_filter }}&category={{ category_filter }}">{{ p }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state text-center py-5">
+  <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+  <h5>No suggestions found</h5>
+  <p class="text-muted">You haven't submitted any suggestions yet.</p>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary">Submit Your First Suggestion</a>
+</div>
+{% endif %}
+{% endblock %}

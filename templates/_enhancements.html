@@ -1,0 +1,97 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     VOICEUP ENHANCEMENTS — Save as: templates/_enhancements.html
+     Include in base template or suggestion_detail.html with:
+     {% include '_enhancements.html' %}
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- 🎊 CONFETTI on Resolved Suggestions -->
+{% if suggestion is defined and suggestion.status == 'resolved' %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script>
+  window.addEventListener('load', function() {
+    // Only fire once per session
+    const key = 'confetti_{{ suggestion.id }}';
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      setTimeout(() => {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 },
+          colors: ['#7c5cfc','#06d6a0','#fbbf24','#f472b6','#60a5fa'] });
+        setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 60,
+          origin: { x: 0 }, colors: ['#7c5cfc','#06d6a0','#fbbf24'] }), 300);
+        setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 60,
+          origin: { x: 1 }, colors: ['#f472b6','#60a5fa','#fbbf24'] }), 600);
+      }, 500);
+    }
+  });
+</script>
+
+<!-- Resolved Banner -->
+<div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+     padding:16px 24px;border-radius:12px;margin-bottom:20px;
+     display:flex;align-items:center;gap:12px;animation:slideDown 0.5s ease;">
+  <span style="font-size:1.8rem;">🎉</span>
+  <div>
+    <div style="font-weight:700;font-size:1rem;">Your suggestion was resolved!</div>
+    <div style="font-size:0.85rem;opacity:0.9;">Thank you for making a difference. Your voice matters!</div>
+  </div>
+</div>
+<style>
+@keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+</style>
+{% endif %}
+
+
+<!-- 👤 PROFILE AVATARS — Add to any template -->
+<style>
+.v-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1rem; color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  flex-shrink: 0;
+}
+.v-avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
+.v-avatar-sm { width: 32px; height: 32px; font-size: 0.8rem; }
+
+/* Auto-color based on first letter */
+.v-avatar[data-letter="A"],.v-avatar[data-letter="a"] { background: linear-gradient(135deg,#f97316,#ea580c); }
+.v-avatar[data-letter="B"],.v-avatar[data-letter="b"] { background: linear-gradient(135deg,#3b82f6,#2563eb); }
+.v-avatar[data-letter="C"],.v-avatar[data-letter="c"] { background: linear-gradient(135deg,#10b981,#059669); }
+.v-avatar[data-letter="D"],.v-avatar[data-letter="d"] { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+.v-avatar[data-letter="E"],.v-avatar[data-letter="e"] { background: linear-gradient(135deg,#ef4444,#dc2626); }
+.v-avatar[data-letter="F"],.v-avatar[data-letter="f"] { background: linear-gradient(135deg,#06b6d4,#0891b2); }
+.v-avatar[data-letter="G"],.v-avatar[data-letter="g"] { background: linear-gradient(135deg,#f59e0b,#d97706); }
+.v-avatar[data-letter="H"],.v-avatar[data-letter="h"] { background: linear-gradient(135deg,#ec4899,#db2777); }
+.v-avatar[data-letter="I"],.v-avatar[data-letter="i"] { background: linear-gradient(135deg,#6366f1,#4f46e5); }
+.v-avatar[data-letter="J"],.v-avatar[data-letter="j"] { background: linear-gradient(135deg,#84cc16,#65a30d); }
+.v-avatar[data-letter="K"],.v-avatar[data-letter="k"] { background: linear-gradient(135deg,#14b8a6,#0d9488); }
+.v-avatar[data-letter="L"],.v-avatar[data-letter="l"] { background: linear-gradient(135deg,#a855f7,#9333ea); }
+.v-avatar[data-letter="M"],.v-avatar[data-letter="m"] { background: linear-gradient(135deg,#f43f5e,#e11d48); }
+.v-avatar[data-letter="N"],.v-avatar[data-letter="n"] { background: linear-gradient(135deg,#0ea5e9,#0284c7); }
+.v-avatar[data-letter="O"],.v-avatar[data-letter="o"] { background: linear-gradient(135deg,#fb923c,#f97316); }
+.v-avatar[data-letter="P"],.v-avatar[data-letter="p"] { background: linear-gradient(135deg,#c084fc,#a855f7); }
+.v-avatar[data-letter="Q"],.v-avatar[data-letter="q"] { background: linear-gradient(135deg,#34d399,#10b981); }
+.v-avatar[data-letter="R"],.v-avatar[data-letter="r"] { background: linear-gradient(135deg,#fb7185,#f43f5e); }
+.v-avatar[data-letter="S"],.v-avatar[data-letter="s"] { background: linear-gradient(135deg,#7c5cfc,#6d28d9); }
+.v-avatar[data-letter="T"],.v-avatar[data-letter="t"] { background: linear-gradient(135deg,#2dd4bf,#14b8a6); }
+.v-avatar[data-letter="U"],.v-avatar[data-letter="u"] { background: linear-gradient(135deg,#60a5fa,#3b82f6); }
+.v-avatar[data-letter="V"],.v-avatar[data-letter="v"] { background: linear-gradient(135deg,#4ade80,#22c55e); }
+.v-avatar[data-letter="W"],.v-avatar[data-letter="w"] { background: linear-gradient(135deg,#fcd34d,#f59e0b); }
+.v-avatar[data-letter="X"],.v-avatar[data-letter="x"] { background: linear-gradient(135deg,#f87171,#ef4444); }
+.v-avatar[data-letter="Y"],.v-avatar[data-letter="y"] { background: linear-gradient(135deg,#a3e635,#84cc16); }
+.v-avatar[data-letter="Z"],.v-avatar[data-letter="z"] { background: linear-gradient(135deg,#818cf8,#6366f1); }
+</style>
+
+<script>
+/* Auto-initialize all avatars on page */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.v-avatar').forEach(function(el) {
+    const name = el.dataset.name || el.textContent.trim();
+    if (name) {
+      const letter = name[0].toUpperCase();
+      el.dataset.letter = letter;
+      if (!el.textContent.trim()) el.textContent = letter;
+    }
+  });
+});
+</script>

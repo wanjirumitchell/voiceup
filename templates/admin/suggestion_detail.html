@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suggestion Detail — Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-voiceup">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+      <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    </a>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light ms-auto">
+      <i class="fas fa-sign-out-alt me-1"></i>Logout
+    </a>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show">
+      {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">{{ suggestion.title }}</h4>
+      <div class="d-flex gap-2 flex-wrap">
+        <code class="small">{{ suggestion.suggestion_id }}</code>
+        <span class="badge badge-category">{{ suggestion.category|title }}</span>
+        <span class="badge badge-priority-{{ suggestion.priority }}">{{ suggestion.priority|title }}</span>
+        <span class="badge badge-status-{{ suggestion.status }}">{{ suggestion.status|replace('_',' ')|title }}</span>
+        {% if suggestion.ai_sentiment %}
+        <span class="badge 
+          {% if suggestion.ai_sentiment == 'urgent' or suggestion.ai_sentiment == 'angry' %}bg-danger
+          {% elif suggestion.ai_sentiment == 'frustrated' %}bg-warning text-dark
+          {% elif suggestion.ai_sentiment == 'positive' %}bg-success
+          {% else %}bg-secondary{% endif %}">
+          <i class="fas fa-brain me-1"></i>{{ suggestion.ai_sentiment|title }}
+        </span>
+        {% endif %}
+        <span class="badge {% if sla_status=='overdue' %}bg-danger{% elif sla_status=='at_risk' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+          SLA: {{ sla_status|replace('_',' ')|title }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-8">
+
+      <!-- Suggestion Content -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4">
+          <h6 class="fw-bold mb-0"><i class="fas fa-file-alt me-2"></i>Suggestion Content</h6>
+        </div>
+        <div class="card-body p-4">
+          <p>{{ suggestion.description }}</p>
+          <div class="d-flex gap-3 mt-3 pt-3 border-top flex-wrap">
+            <div><small class="text-muted">Submitted by</small><div class="fw-semibold">{{ suggestion.fullname }} ({{ suggestion.user_role }})</div></div>
+            <div><small class="text-muted">Email</small><div>{{ suggestion.email }}</div></div>
+            <div><small class="text-muted">Anonymous</small><div>{{ 'Yes' if suggestion.is_anonymous else 'No' }}</div></div>
+            <div><small class="text-muted">Votes</small><div class="fw-semibold">{{ suggestion.vote_count }}</div></div>
+          </div>
+        </div>
+      </div>
+
+      {% if attachments %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-paperclip me-2"></i>Attachments</h6></div>
+        <div class="card-body p-4">
+          {% for a in attachments %}
+          <a href="{{ url_for('static', filename='uploads/' + a.filename) }}" target="_blank" class="file-item d-flex align-items-center text-decoration-none mb-2">
+            <i class="fas fa-file me-2 text-primary"></i>{{ a.original_name }}
+            <small class="text-muted ms-2">({{ (a.file_size/1024)|round(1) }} KB)</small>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Public Responses -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-comments me-2"></i>Public Responses</h6></div>
+        <div class="card-body p-4">
+          {% for r in responses %}
+          <div class="response-bubble mb-3">
+            <div class="d-flex align-items-center mb-1">
+              <div class="admin-avatar me-2">{{ r.admin_name[0]|upper }}</div>
+              <strong>{{ r.admin_name }}</strong>
+              <small class="text-muted ms-2">{{ r.created_at.strftime('%b %d, %Y %H:%M') if r.created_at else '' }}</small>
+            </div>
+            <p class="mb-0">{{ r.response_text }}</p>
+          </div>
+          {% endfor %}
+          <form method="POST">
+            <input type="hidden" name="action" value="add_response">
+            <textarea name="response_text" class="form-control mb-2" rows="3" placeholder="Write a public response visible to the user..."></textarea>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-reply me-1"></i>Send Response</button>
+            <button type="button" class="btn btn-outline-primary btn-sm ms-2" onclick="getAIDraft()">
+              <i class="fas fa-robot me-1"></i>AI Draft
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Internal Notes -->
+      <div class="card shadow-sm mb-4" style="border-left:4px solid #f59e0b">
+        <div class="card-header border-0 pt-3 px-4">
+          <h6 class="fw-bold mb-0"><i class="fas fa-lock me-2 text-warning"></i>Internal Notes <small class="text-muted fw-normal">(not visible to users)</small></h6>
+        </div>
+        <div class="card-body p-4">
+          {% for n in notes %}
+          <div class="note-bubble mb-3">
+            <div class="d-flex align-items-center mb-1">
+              <div class="admin-avatar warning me-2">{{ n.admin_name[0]|upper }}</div>
+              <strong>{{ n.admin_name }}</strong>
+              <small class="text-muted ms-2">{{ n.created_at.strftime('%b %d, %Y %H:%M') if n.created_at else '' }}</small>
+            </div>
+            <p class="mb-0">{{ n.note_text }}</p>
+          </div>
+          {% endfor %}
+          <form method="POST">
+            <input type="hidden" name="action" value="add_note">
+            <textarea name="note_text" class="form-control mb-2" rows="2" placeholder="Add an internal note..."></textarea>
+            <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-lock me-1"></i>Add Note</button>
+          </form>
+        </div>
+      </div>
+
+
+      <!-- Merge Suggestion -->
+      <div class="card shadow-sm mb-4" style="border-left:4px solid #6366f1">
+        <div class="card-header border-0 pt-3 px-4">
+          <h6 class="fw-bold mb-0"><i class="fas fa-code-merge me-2 text-primary"></i>Merge Into Another</h6>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted small mb-3">Merge this suggestion into a duplicate. All votes and responses will move to the target.</p>
+          <form method="POST" action="{{ url_for('merge_suggestion', sid=suggestion.id) }}"
+                onsubmit="return confirm('Merge this suggestion? This cannot be undone.')">
+            <input type="hidden" name="action" value="merge">
+            <div class="input-group input-group-sm">
+              <input type="text" name="merge_into" class="form-control"
+                     placeholder="Target ID e.g. SGT-XXXXXX" required>
+              <button type="submit" class="btn btn-outline-primary">Merge</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Discussion / Comments -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4">
+          <h6 class="fw-bold mb-0"><i class="fas fa-comment-dots me-2 text-info"></i>Discussion Thread</h6>
+        </div>
+        <div class="card-body p-4">
+          {% if comments %}
+            {% for c in comments %}
+            <div class="response-bubble mb-3 {% if c.admin_id %}border-primary{% else %}border-success{% endif %}" style="border-left-color:{% if c.admin_id %}#6366f1{% else %}#10b981{% endif %}">
+              <div class="d-flex align-items-center mb-1">
+                <div class="admin-avatar me-2" style="background:{% if c.admin_id %}linear-gradient(135deg,#6366f1,#8b5cf6){% else %}linear-gradient(135deg,#10b981,#059669){% endif %}">
+                  {{ c.author[0]|upper }}
+                </div>
+                <strong>{{ c.author }}</strong>
+                <span class="badge ms-2 {% if c.admin_id %}bg-primary{% else %}bg-success{% endif %} small">
+                  {% if c.admin_id %}Admin{% else %}User{% endif %}
+                </span>
+                <small class="text-muted ms-2">{{ c.created_at.strftime("%b %d, %H:%M") if c.created_at else "" }}</small>
+              </div>
+              <p class="mb-0">{{ c.body }}</p>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small mb-3">No discussion yet.</p>
+          {% endif %}
+          <form method="POST" action="{{ url_for('admin_add_comment', sid=suggestion.id) }}" class="mt-2">
+            <div class="input-group">
+              <input type="text" name="body" class="form-control form-control-sm" placeholder="Add to discussion..." required>
+              <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% if rating %}
+      <div class="card shadow-sm">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-star text-warning me-2"></i>User Satisfaction Rating</h6></div>
+        <div class="card-body p-4">
+          <div>
+            {% for i in range(1,6) %}<i class="fas fa-star {% if i <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>{% endfor %}
+            <span class="ms-2 fw-semibold">{{ rating.rating }}/5</span>
+          </div>
+          {% if rating.comment %}<p class="text-muted mt-2 mb-0">"{{ rating.comment }}"</p>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <div class="col-md-4">
+      <!-- Update Status -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-edit me-2"></i>Update Status</h6></div>
+        <div class="card-body p-4">
+          <form method="POST">
+            <input type="hidden" name="action" value="update_status">
+            <select name="status" class="form-select mb-3">
+              {% for s in ['pending','under_review','resolved','rejected'] %}
+              <option value="{{ s }}" {% if suggestion.status==s %}selected{% endif %}>{{ s|replace('_',' ')|title }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary w-100">Update Status</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Assign to Admin -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-user-tag me-2"></i>Assign To</h6></div>
+        <div class="card-body p-4">
+          <form method="POST">
+            <input type="hidden" name="action" value="assign">
+            <select name="assigned_to" class="form-select mb-3">
+              <option value="">Unassigned</option>
+              {% for a in admins %}
+              <option value="{{ a.id }}" {% if suggestion.assigned_to==a.id %}selected{% endif %}>{{ a.username }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-outline-primary w-100">Assign</button>
+          </form>
+          {% if suggestion.assigned_at %}
+          <small class="text-muted d-block mt-2">Assigned {{ suggestion.assigned_at.strftime('%b %d, %Y') }}</small>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="card shadow-sm">
+        <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-info-circle me-2"></i>Details</h6></div>
+        <div class="card-body p-4">
+          <div class="detail-row"><span class="text-muted">Due Date</span><span>{{ suggestion.due_date.strftime('%b %d, %Y') if suggestion.due_date else '—' }}</span></div>
+          <div class="detail-row"><span class="text-muted">Created</span><span>{{ suggestion.created_at.strftime('%b %d, %Y') if suggestion.created_at else '—' }}</span></div>
+          <div class="detail-row"><span class="text-muted">Updated</span><span>{{ suggestion.updated_at.strftime('%b %d, %Y') if suggestion.updated_at else '—' }}</span></div>
+          <div class="detail-row"><span class="text-muted">Votes</span><span>{{ suggestion.vote_count }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+async function getAIDraft() {
+  const btn = event.target;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+  btn.disabled = true;
+  try {
+    const res  = await fetch('/admin/suggestion/{{ suggestion.id }}/ai-draft', {method:'POST'});
+    const data = await res.json();
+    if (data.draft) {
+      document.querySelector('[name=response_text]').value = data.draft;
+    } else {
+      alert('Could not generate draft. Check your API key in app.py.');
+    }
+  } catch(e) {
+    alert('Error generating draft.');
+  }
+  btn.innerHTML = '<i class="fas fa-robot me-1"></i>AI Draft';
+  btn.disabled = false;
+}
+</script>
+{% include '_timeline.html' %}
+</body>
+</html>

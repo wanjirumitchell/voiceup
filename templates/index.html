@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<section class="hero-section text-center py-5 mb-5">
+  <div class="hero-content">
+    <div class="hero-icon mb-4"><i class="fas fa-bullhorn"></i></div>
+    <h1 class="display-4 fw-bold mb-3">Your Voice Matters</h1>
+    <p class="lead mb-4 opacity-75">Submit suggestions, track progress, and help shape your institution's future.</p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary btn-lg px-5">
+          <i class="fas fa-plus-circle me-2"></i>Submit a Suggestion
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg px-5">
+          <i class="fas fa-tachometer-alt me-2"></i>My Dashboard
+        </a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-5">
+          <i class="fas fa-user-plus me-2"></i>Get Started
+        </a>
+        <a href="{{ url_for('public_board') }}" class="btn btn-outline-primary btn-lg px-5">
+          <i class="fas fa-globe me-2"></i>View Public Board
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="row g-4 mb-5">
+  <div class="col-md-4">
+    <div class="stat-card text-center p-4">
+      <div class="stat-icon"><i class="fas fa-lightbulb"></i></div>
+      <div class="stat-number">{{ total }}</div>
+      <div class="stat-label">Suggestions Submitted</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center p-4">
+      <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-number">{{ resolved }}</div>
+      <div class="stat-label">Issues Resolved</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center p-4">
+      <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+      <div class="stat-number">{{ users }}</div>
+      <div class="stat-label">Active Students</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-5">
+  <div class="col-md-3">
+    <div class="feature-card p-4">
+      <div class="feature-icon"><i class="fas fa-paper-plane"></i></div>
+      <h5 class="fw-bold mt-3">Submit</h5>
+      <p class="text-muted small">Submit suggestions with file attachments and set priority levels.</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="feature-card p-4">
+      <div class="feature-icon"><i class="fas fa-thumbs-up"></i></div>
+      <h5 class="fw-bold mt-3">Vote</h5>
+      <p class="text-muted small">Upvote suggestions that matter to you on the public board.</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="feature-card p-4">
+      <div class="feature-icon"><i class="fas fa-route"></i></div>
+      <h5 class="fw-bold mt-3">Track</h5>
+      <p class="text-muted small">Follow your suggestion's progress with a live status timeline.</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="feature-card p-4">
+      <div class="feature-icon"><i class="fas fa-star"></i></div>
+      <h5 class="fw-bold mt-3">Rate</h5>
+      <p class="text-muted small">Rate how satisfied you are when your suggestion is resolved.</p>
+    </div>
+  </div>
+</div>
+
+<div class="text-center py-4">
+  <h4 class="fw-bold mb-3">Have an issue to report anonymously?</h4>
+  <a href="{{ url_for('track_suggestion') }}" class="btn btn-outline-secondary me-2">
+    <i class="fas fa-search me-2"></i>Track a Suggestion
+  </a>
+  {% if not session.get('user_id') %}
+  <a href="{{ url_for('user_login') }}" class="btn btn-outline-primary">
+    <i class="fas fa-sign-in-alt me-2"></i>Login
+  </a>
+  {% endif %}
+</div>
+{% endblock %}

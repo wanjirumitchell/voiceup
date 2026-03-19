@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Submit Suggestion{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header border-0 pt-4 px-4">
+        <h4 class="fw-bold mb-1"><i class="fas fa-paper-plane me-2 text-primary"></i>Submit a Suggestion</h4>
+        <p class="text-muted small mb-0">Your feedback helps improve our institution</p>
+      </div>
+      <div class="card-body p-4">
+        <!-- Template Loader -->
+        <div class="mb-4 p-3 rounded" style="background:rgba(99,102,241,.05);border:1px dashed #6366f1">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="fw-semibold text-primary"><i class="fas fa-magic me-2"></i>Use a Template</span>
+            <a href="{{ url_for('suggestion_templates') }}" class="btn btn-sm btn-outline-primary">Browse Templates</a>
+          </div>
+          <select id="templateSelect" class="form-select form-select-sm mt-2" onchange="loadTemplate(this.value)">
+            <option value="">Select a template to pre-fill the form...</option>
+            {% for t in templates %}
+            <option value="{{ t.id }}">{{ t.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="Brief title for your suggestion"
+                   value="{{ title|default('') }}" required minlength="5">
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+              <select name="category" class="form-select" required>
+                <option value="">Select a category...</option>
+                {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
+                <option value="{{ cat }}" {% if category|default('')==cat %}selected{% endif %}>{{ cat|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority</label>
+              <select name="priority" class="form-select">
+                {% for p in ['low','medium','high','urgent'] %}
+                <option value="{{ p }}" {% if priority|default('medium')==p %}selected{% endif %}>{{ p|title }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Sets the response deadline for admins</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+            <textarea name="description" class="form-control" rows="5"
+                      placeholder="Describe your suggestion in detail (at least 20 characters)..."
+                      required minlength="20">{{ description|default('') }}</textarea>
+          <div class="d-flex gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="aiImprove()">
+              <i class="fas fa-magic me-1"></i>AI Improve
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="findDuplicates()">
+              <i class="fas fa-search me-1"></i>Check Duplicates
+            </button>
+          </div>
+          <div id="duplicateWarning" class="mt-2" style="display:none"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold"><i class="fas fa-paperclip me-1"></i>Attachments</label>
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" name="attachments" id="fileInput" multiple
+                     accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx,.txt" class="d-none">
+              <div class="upload-content" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                <p class="mb-0 text-muted">Click to upload files or drag & drop</p>
+                <small class="text-muted">PNG, JPG, PDF, DOC, TXT — Max 5MB each</small>
+              </div>
+              <div id="fileList" class="mt-2"></div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous">
+              <label class="form-check-label" for="anonymous">
+                <strong>Submit anonymously</strong>
+                <small class="text-muted d-block">Your name will not be shown publicly</small>
+              </label>
+            </div>
+          </div>
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary px-5">
+              <i class="fas fa-paper-plane me-2"></i>Submit Suggestion
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function aiCategorize() {
+  const title = document.querySelector('[name=title]').value;
+  const desc  = document.querySelector('[name=description]').value;
+  if (!title && !desc) { alert('Please enter a title or description first.'); return; }
+  const res  = await fetch('/api/ai/categorize', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({title, description: desc})
+  });
+  const data = await res.json();
+  if (data.category) {
+    document.querySelector('[name=category]').value = data.category;
+    document.querySelector('[name=priority]').value = data.priority;
+    alert(`AI suggests: Category = ${data.category}, Priority = ${data.priority}\n\nReason: ${data.reason||''}`);
+  }
+}
+
+async function aiImprove() {
+  const ta   = document.querySelector('[name=description]');
+  const text = ta.value.trim();
+  if (!text || text.length < 10) { alert('Please write a description first.'); return; }
+  const btn = event.target;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Improving...';
+  btn.disabled = true;
+  const res  = await fetch('/api/ai/improve', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  });
+  const data = await res.json();
+  if (data.improved) {
+    if (confirm('Replace your text with AI improved version?\n\n' + data.improved)) {
+      ta.value = data.improved;
+    }
+  }
+  btn.innerHTML = '<i class="fas fa-magic me-1"></i>AI Improve';
+  btn.disabled = false;
+}
+
+async function findDuplicates() {
+  const title = document.querySelector('[name=title]').value;
+  const desc  = document.querySelector('[name=description]').value;
+  if (!title && !desc) { alert('Please enter a title or description first.'); return; }
+  const res  = await fetch('/api/ai/duplicates', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({title, description: desc})
+  });
+  const data = await res.json();
+  const box  = document.getElementById('duplicateWarning');
+  if (data.duplicates && data.duplicates.length > 0) {
+    let html = '<div class="alert alert-warning"><strong><i class="fas fa-exclamation-triangle me-2"></i>Similar suggestions found:</strong><ul class="mb-0 mt-2">';
+    data.duplicates.forEach(d => {
+      html += `<li>${d.title} <span class="badge bg-warning text-dark">${d.similarity}% similar</span></li>`;
+    });
+    html += '</ul><small class="d-block mt-1">Consider upvoting existing suggestions instead of creating duplicates.</small></div>';
+    box.innerHTML = html;
+    box.style.display = 'block';
+  } else {
+    box.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>No similar suggestions found. Your suggestion appears to be unique!</div>';
+    box.style.display = 'block';
+  }
+}
+</script>
+<script>
+const fileInput = document.getElementById('fileInput');
+const fileList  = document.getElementById('fileList');
+const uploadZone = document.getElementById('uploadZone');
+
+fileInput.addEventListener('change', showFiles);
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  fileInput.files = e.dataTransfer.files;
+  showFiles();
+});
+
+function showFiles() {
+  fileList.innerHTML = '';
+  Array.from(fileInput.files).forEach(f => {
+    const size = (f.size/1024).toFixed(1);
+    fileList.innerHTML += `<div class="file-item"><i class="fas fa-file me-2"></i>${f.name} <small class="text-muted">(${size} KB)</small></div>`;
+  });
+}
+</script>
+{% endblock %}

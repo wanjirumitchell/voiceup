@@ -1,0 +1,43 @@
+{
+  "name": "VoiceUp - Student Voice System",
+  "short_name": "VoiceUp",
+  "description": "Submit and track suggestions at your institution",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Submit Suggestion",
+      "url": "/submit",
+      "description": "Submit a new suggestion"
+    },
+    {
+      "name": "My Dashboard",
+      "url": "/dashboard",
+      "description": "View your dashboard"
+    },
+    {
+      "name": "Track Suggestion",
+      "url": "/track",
+      "description": "Track a suggestion"
+    }
+  ]
+}

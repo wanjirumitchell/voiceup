@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Track Suggestion{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold"><i class="fas fa-search me-2 text-primary"></i>Track Your Suggestion</h2>
+      <p class="text-muted">Enter your tracking ID to see the current status</p>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="input-group input-group-lg">
+            <input type="text" name="track_id" class="form-control" placeholder="e.g. SGT-ABC12345"
+                   value="{{ request.form.get('track_id','') }}" required>
+            <button class="btn btn-primary" type="submit">
+              <i class="fas fa-search me-2"></i>Track
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if suggestion %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header border-0 pt-4 px-4">
+        <div class="d-flex justify-content-between align-items-start">
+          <h5 class="fw-bold mb-0">{{ suggestion.title }}</h5>
+          <span class="badge badge-status-{{ suggestion.status }}">{{ suggestion.status|replace('_',' ')|title }}</span>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <small class="text-muted d-block">Category</small>
+            <strong>{{ suggestion.category|title }}</strong>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Priority</small>
+            <span class="badge badge-priority-{{ suggestion.priority }}">{{ suggestion.priority|title }}</span>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Submitted</small>
+            <strong>{{ suggestion.created_at.strftime('%B %d, %Y') if suggestion.created_at else 'N/A' }}</strong>
+          </div>
+          <div class="col-6">
+            <small class="text-muted d-block">Votes</small>
+            <strong>{{ suggestion.vote_count }}</strong>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <h6 class="fw-bold mb-3">Progress</h6>
+        <div class="timeline">
+          {% set statuses = ['pending','under_review','resolved'] %}
+          {% set labels   = {'pending':'Submitted','under_review':'Under Review','resolved':'Resolved'} %}
+          {% set icons    = {'pending':'fa-paper-plane','under_review':'fa-search','resolved':'fa-check-circle'} %}
+          {% set current_index = statuses.index(suggestion.status) if suggestion.status in statuses else 0 %}
+          {% for i, st in enumerate(statuses) %}
+          <div class="timeline-item {% if i <= current_index %}active{% endif %} {% if i < current_index %}done{% endif %}">
+            <div class="timeline-dot"><i class="fas {{ icons[st] }}"></i></div>
+            <div class="timeline-content"><strong>{{ labels[st] }}</strong></div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if responses %}
+        <h6 class="fw-bold mt-4 mb-3">Admin Responses</h6>
+        {% for r in responses %}
+        <div class="response-bubble mb-3">
+          <div class="d-flex align-items-center mb-1">
+            <div class="admin-avatar me-2">{{ r.admin_name[0]|upper }}</div>
+            <strong>{{ r.admin_name }}</strong>
+            <small class="text-muted ms-2">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '' }}</small>
+          </div>
+          <p class="mb-0">{{ r.response_text }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

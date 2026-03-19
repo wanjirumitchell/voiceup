@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Suggestion Templates{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="fas fa-file-alt me-2 text-primary"></i>Suggestion Templates</h2>
+    <p class="text-muted mb-0">Start from a template to save time</p>
+  </div>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-outline-primary">
+    <i class="fas fa-pen me-2"></i>Write from scratch
+  </a>
+</div>
+
+<div class="row g-4">
+  {% for t in templates %}
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100 template-card" onclick="useTemplate({{ t.id }})">
+      <div class="card-body p-4">
+        <div class="template-icon mb-3">
+          <i class="fas {{ t.icon }}"></i>
+        </div>
+        <h6 class="fw-bold mb-2">{{ t.title }}</h6>
+        <p class="text-muted small mb-3">{{ t.description[:100] }}...</p>
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex gap-2">
+            <span class="badge badge-category">{{ t.category|title }}</span>
+            <span class="badge badge-priority-{{ t.priority }}">{{ t.priority|title }}</span>
+          </div>
+          <small class="text-muted"><i class="fas fa-users me-1"></i>{{ t.use_count }} uses</small>
+        </div>
+      </div>
+      <div class="card-footer border-0 pt-0 pb-3 px-4">
+        <button class="btn btn-primary btn-sm w-100">
+          <i class="fas fa-magic me-2"></i>Use This Template
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold"><i class="fas fa-magic me-2 text-primary"></i>Use Template</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('submit_suggestion') }}">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title</label>
+            <input type="text" name="title" id="tplTitle" class="form-control" required>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Category</label>
+              <select name="category" id="tplCategory" class="form-select">
+                {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
+                <option value="{{ cat }}">{{ cat|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority</label>
+              <select name="priority" id="tplPriority" class="form-select">
+                {% for p in ['low','medium','high','urgent'] %}
+                <option value="{{ p }}">{{ p|title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description <small class="text-muted">(edit the template to fit your situation)</small></label>
+            <textarea name="description" id="tplDesc" class="form-control" rows="6" required></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="anonymous" id="tplAnon">
+            <label class="form-check-label" for="tplAnon">Submit anonymously</label>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary px-5">
+            <i class="fas fa-paper-plane me-2"></i>Submit Suggestion
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const templates = {{ templates_json|safe }};
+
+function useTemplate(id) {
+  const t = templates.find(t => t.id === id);
+  if (!t) return;
+  document.getElementById('tplTitle').value = t.title;
+  document.getElementById('tplCategory').value = t.category;
+  document.getElementById('tplPriority').value = t.priority;
+  document.getElementById('tplDesc').value = t.description;
+  new bootstrap.Modal(document.getElementById('templateModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Update{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary me-3">
+    <i class="fas fa-arrow-left me-1"></i>Back
+  </a>
+  <h2 class="fw-bold mb-0"><i class="fas fa-layer-group me-2 text-primary"></i>Bulk Status Update</h2>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body p-4">
+    <form method="POST" action="{{ url_for('admin_bulk_update') }}" id="bulkForm">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleAll(this)">
+            <label class="form-check-label fw-semibold" for="selectAll">Select All</label>
+          </div>
+          <span class="text-muted small" id="selectedCount">0 selected</span>
+        </div>
+        <div class="d-flex gap-3 align-items-end">
+          <div>
+            <label class="form-label small fw-semibold mb-1">New Status</label>
+            <select name="new_status" class="form-select form-select-sm" required>
+              <option value="">Select status...</option>
+              <option value="pending">Pending</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm"
+                  onclick="return confirm('Update status for all selected suggestions?')">
+            <i class="fas fa-check me-1"></i>Apply to Selected
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th width="40"></th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Priority</th>
+              <th>Current Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in suggestions %}
+            <tr>
+              <td>
+                <input class="form-check-input suggestion-check" type="checkbox"
+                       name="suggestion_ids" value="{{ s.id }}" onchange="updateCount()">
+              </td>
+              <td><code class="small">{{ s.suggestion_id }}</code></td>
+              <td>
+                <div class="fw-semibold small">{{ s.title[:50] }}{% if s.title|length > 50 %}...{% endif %}</div>
+                <small class="text-muted">{{ s.fullname }}</small>
+              </td>
+              <td><span class="badge badge-category">{{ s.category|title }}</span></td>
+              <td><span class="badge badge-priority-{{ s.priority }}">{{ s.priority|title }}</span></td>
+              <td><span class="badge badge-status-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span></td>
+              <td><small class="text-muted">{{ s.created_at.strftime('%b %d') if s.created_at else '' }}</small></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAll(cb) {
+  document.querySelectorAll('.suggestion-check').forEach(c => c.checked = cb.checked);
+  updateCount();
+}
+function updateCount() {
+  const count = document.querySelectorAll('.suggestion-check:checked').length;
+  document.getElementById('selectedCount').textContent = `${count} selected`;
+}
+</script>
+{% endblock %}

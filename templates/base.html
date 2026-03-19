@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VoiceUp{% endblock %} — Student Voice System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="VoiceUp">
+    {% block extra_css %}{% endblock %}
+<link href="{{ url_for('static', filename='css/v5.css') }}" rel="stylesheet">
+</head>
+</head>
+<body>
+
+{% if announcement_active and announcement %}
+<div class="announcement-banner">
+  <div class="container">
+    <i class="fas fa-bullhorn me-2"></i>{{ announcement }}
+  </div>
+</div>
+{% endif %}
+
+<nav class="navbar navbar-expand-lg navbar-voiceup">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('index') }}">
+      <i class="fas fa-bullhorn me-2"></i>VoiceUp
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('public_board') }}"><i class="fas fa-globe me-1"></i>Public Board</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('track_suggestion') }}"><i class="fas fa-search me-1"></i>Track</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('chatbot') }}"><i class="fas fa-robot me-1"></i>AI Assistant</a></li>
+        {% if session.get('user_id') %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('submit_suggestion') }}"><i class="fas fa-plus-circle me-1"></i>Submit</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('suggestion_templates') }}"><i class="fas fa-file-alt me-1"></i>Templates</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('my_suggestions') }}"><i class="fas fa-list me-1"></i>My Suggestions</a></li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav align-items-center gap-2">
+        <li class="nav-item">
+          <button class="btn btn-sm theme-toggle" id="themeToggle" title="Toggle dark mode">
+            <i class="fas fa-moon" id="themeIcon"></i>
+          </button>
+        </li>
+        {% if session.get('user_id') %}
+        <li class="nav-item">
+          <a href="{{ url_for('notifications') }}" class="btn btn-sm notif-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        {% endif %}
+        {% if session.get('user_id') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle user-pill" href="#" data-bs-toggle="dropdown">
+            <i class="fas fa-user-circle me-1"></i>{{ session.user_name.split()[0] }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text text-muted small">{{ session.user_email }}</span></li>
+            <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="fas fa-user-edit me-2"></i>My Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+<li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+          </ul>
+        </li>
+        {% else %}
+        <li class="nav-item"><a class="btn btn-outline-primary btn-sm" href="{{ url_for('user_login') }}">Login</a></li>
+        <li class="nav-item"><a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">Register</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4 mb-5">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm" role="alert">
+          <i class="fas {% if cat=='success' %}fa-check-circle{% elif cat=='danger' %}fa-exclamation-circle{% elif cat=='warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+          {{ msg|safe }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<footer class="footer-voiceup">
+  <div class="container text-center">
+    <p class="mb-0"><i class="fas fa-bullhorn me-2"></i><strong>VoiceUp</strong> — Your voice matters.</p>
+    <p class="small mt-1 opacity-75">Empowering students to shape their institution</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'flex';
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      const btn = document.getElementById('pwaInstallBtn');
+      if (btn) btn.style.display = 'none';
+    });
+  }
+}
+</script>
+
+<!-- PWA Install Button -->
+<div id="pwaInstallBtn" style="display:none;position:fixed;bottom:20px;left:20px;z-index:9998">
+  <button onclick="installPWA()" class="btn btn-primary shadow">
+    <i class="fas fa-download me-2"></i>Install App
+  </button>
+</div>
+
+</body>
+</html>
