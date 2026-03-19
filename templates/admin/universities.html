@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Universities — VoiceUp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .uni-card {
+      border-radius: 16px; border: 1px solid #e2e8f0;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+    .uni-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .uni-header {
+      height: 8px;
+    }
+    .plan-badge-free       { background:#f1f5f9; color:#64748b; }
+    .plan-badge-pro        { background:#ede9fe; color:#6366f1; }
+    .plan-badge-enterprise { background:#fef3c7; color:#d97706; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-voiceup">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+      <i class="fas fa-arrow-left me-2"></i>Dashboard
+    </a>
+    <span class="navbar-brand mx-auto fw-bold">🏫 Manage Universities</span>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light ms-auto">Logout</a>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show">
+      {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-1">Universities</h4>
+      <p class="text-muted mb-0">{{ universities|length }} institution{{ 's' if universities|length != 1 }} registered</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+      <i class="fas fa-plus me-2"></i>Add University
+    </button>
+  </div>
+
+  <!-- Universities Grid -->
+  <div class="row g-4">
+    {% for uni in universities %}
+    <div class="col-md-4">
+      <div class="uni-card card shadow-sm">
+        <!-- Color bar -->
+        <div class="uni-header" style="background:linear-gradient(135deg,{{ uni.primary_color }},{{ uni.secondary_color }});"></div>
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <div>
+              <h5 class="fw-bold mb-1">{{ uni.name }}</h5>
+              <span class="badge bg-secondary">{{ uni.short_name }}</span>
+              <span class="badge plan-badge-{{ uni.plan }} ms-1">{{ uni.plan|title }}</span>
+              {% if not uni.is_active %}
+              <span class="badge bg-danger ms-1">Inactive</span>
+              {% endif %}
+            </div>
+            <div style="width:40px;height:40px;border-radius:10px;
+                 background:linear-gradient(135deg,{{ uni.primary_color }},{{ uni.secondary_color }});
+                 display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;">
+              {{ uni.short_name[0] }}
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="d-flex gap-3 mb-3">
+            <div class="text-center">
+              <div class="fw-bold text-primary">{{ uni.total_users }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">Users</div>
+            </div>
+            <div class="text-center">
+              <div class="fw-bold text-success">{{ uni.total_suggestions }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">Suggestions</div>
+            </div>
+            {% if uni.email %}
+            <div class="text-muted small mt-1">
+              <i class="fas fa-envelope me-1"></i>{{ uni.email }}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('university_stats', uid=uni.id) }}"
+               class="btn btn-sm btn-outline-primary flex-grow-1">
+              <i class="fas fa-chart-bar me-1"></i>Stats
+            </a>
+            <button class="btn btn-sm btn-outline-secondary"
+                    onclick="editUniversity({{ uni|tojson }})">
+              <i class="fas fa-edit"></i>
+            </button>
+            {% if uni.id != 1 %}
+            <form method="POST" action="{{ url_for('delete_university', uid=uni.id) }}"
+                  onsubmit="return confirm('Deactivate this university?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Create University Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-header border-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold">🏫 Add New University</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('create_university') }}">
+        <div class="modal-body px-4">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">University Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. University of Nairobi" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Short Name *</label>
+              <input type="text" name="short_name" class="form-control" placeholder="e.g. UON" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="admin@university.ac.ke">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phone</label>
+              <input type="text" name="phone" class="form-control" placeholder="+254 700 000 000">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Primary Color</label>
+              <input type="color" name="primary_color" class="form-control form-control-color w-100" value="#6366f1">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Secondary Color</label>
+              <input type="color" name="secondary_color" class="form-control form-control-color w-100" value="#8b5cf6">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Plan</label>
+              <select name="plan" class="form-select">
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Address</label>
+              <textarea name="address" class="form-control" rows="2" placeholder="Physical address..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-plus me-2"></i>Create University
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit University Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:20px;">
+      <div class="modal-header border-0 pt-4 px-4">
+        <h5 class="modal-title fw-bold">✏️ Edit University</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editForm">
+        <div class="modal-body px-4">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">University Name *</label>
+              <input type="text" name="name" id="edit_name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Short Name *</label>
+              <input type="text" name="short_name" id="edit_short_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" name="email" id="edit_email" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phone</label>
+              <input type="text" name="phone" id="edit_phone" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Primary Color</label>
+              <input type="color" name="primary_color" id="edit_primary" class="form-control form-control-color w-100">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Secondary Color</label>
+              <input type="color" name="secondary_color" id="edit_secondary" class="form-control form-control-color w-100">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Plan</label>
+              <select name="plan" id="edit_plan" class="form-select">
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Address</label>
+              <textarea name="address" id="edit_address" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="edit_active">
+                <label class="form-check-label" for="edit_active">Active</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function editUniversity(uni) {
+  document.getElementById('edit_name').value       = uni.name;
+  document.getElementById('edit_short_name').value = uni.short_name;
+  document.getElementById('edit_email').value      = uni.email || '';
+  document.getElementById('edit_phone').value      = uni.phone || '';
+  document.getElementById('edit_primary').value    = uni.primary_color;
+  document.getElementById('edit_secondary').value  = uni.secondary_color;
+  document.getElementById('edit_plan').value       = uni.plan;
+  document.getElementById('edit_address').value    = uni.address || '';
+  document.getElementById('edit_active').checked   = uni.is_active == 1;
+  document.getElementById('editForm').action       = `/admin/universities/${uni.id}/edit`;
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+</script>
+</body>
+</html>
