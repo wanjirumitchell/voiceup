@@ -1,0 +1,168 @@
+{# ═══════════════════════════════════════════════════════════════════
+   AI FEATURES FOR SUBMIT SUGGESTION PAGE
+   Save as: templates/_ai_features.html
+   Include in submit_suggestion.html before the submit button
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<!-- Duplicate Warning Box -->
+<div id="duplicateWarning" style="display:none;" class="alert border-0 mb-3"
+     style="background:#fef3c7;border-radius:12px;">
+  <div class="d-flex align-items-start gap-3">
+    <span style="font-size:1.5rem;">⚠️</span>
+    <div>
+      <div class="fw-bold mb-1">Similar suggestions found!</div>
+      <div id="duplicateList"></div>
+      <div class="text-muted small mt-2">Consider voting on an existing suggestion instead of creating a duplicate.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Writing Assistant Panel -->
+<div id="writingAssistant" style="display:none;" class="card border-0 shadow-sm mb-3"
+     style="border-radius:16px;border-left:4px solid #6366f1;">
+  <div class="card-body p-3">
+    <div class="fw-bold mb-2"><i class="fas fa-magic me-2 text-primary"></i>AI Writing Assistant</div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="improveText('improve')">
+        <i class="fas fa-wand-magic-sparkles me-1"></i>Improve
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="improveText('formal')">
+        <i class="fas fa-briefcase me-1"></i>Make Formal
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="improveText('shorter')">
+        <i class="fas fa-compress me-1"></i>Make Shorter
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="improveText('clearer')">
+        <i class="fas fa-glasses me-1"></i>Make Clearer
+      </button>
+    </div>
+    <div id="writingResult" style="display:none;" class="mt-3">
+      <div class="p-3 rounded-3" style="background:#f8fafc;font-size:0.9rem;" id="writingResultText"></div>
+      <div class="mt-2 d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-primary" onclick="applyImprovement()">
+          <i class="fas fa-check me-1"></i>Use This
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('writingResult').style.display='none'">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ai-spinner { display:inline-block; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+<script>
+let duplicateTimeout = null;
+let improvedText     = '';
+
+// ── Duplicate Detection ──────────────────────────────────────────
+function checkDuplicates() {
+  clearTimeout(duplicateTimeout);
+  duplicateTimeout = setTimeout(async () => {
+    const title = document.querySelector('[name=title]')?.value?.trim();
+    const desc  = document.querySelector('[name=description]')?.value?.trim();
+    if (!title || title.length < 5) return;
+
+    try {
+      const res  = await fetch('/api/ai/check-duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description: desc })
+      });
+      const data = await res.json();
+
+      const box  = document.getElementById('duplicateWarning');
+      const list = document.getElementById('duplicateList');
+
+      if (data.duplicates && data.duplicates.length > 0) {
+        list.innerHTML = data.duplicates.map(d => `
+          <div class="mb-2">
+            <a href="/track" target="_blank" class="fw-semibold text-warning-emphasis text-decoration-none">
+              ${d.title}
+            </a>
+            <span class="badge ms-2" style="background:#f59e0b;color:white;">${d.similarity}% similar</span>
+            <div class="text-muted small">${d.reason}</div>
+          </div>
+        `).join('');
+        box.style.display = 'block';
+        box.style.background = '#fef3c7';
+        box.style.borderRadius = '12px';
+        box.style.padding = '16px';
+      } else {
+        box.style.display = 'none';
+      }
+    } catch(e) {}
+  }, 1000);
+}
+
+// ── Writing Assistant ────────────────────────────────────────────
+function showWritingAssistant() {
+  const desc = document.querySelector('[name=description]')?.value?.trim();
+  const panel = document.getElementById('writingAssistant');
+  if (desc && desc.length >= 15) {
+    panel.style.display = 'block';
+  }
+}
+
+async function improveText(mode) {
+  const desc = document.querySelector('[name=description]')?.value?.trim();
+  if (!desc || desc.length < 15) {
+    alert('Please write at least 15 characters first.');
+    return;
+  }
+
+  const btn = event.target.closest('button');
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="ai-spinner fas fa-spinner me-1"></i>Thinking...';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch('/api/ai/writing-assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: desc, mode })
+    });
+    const data = await res.json();
+
+    if (data.result) {
+      improvedText = data.result;
+      document.getElementById('writingResultText').textContent = data.result;
+      document.getElementById('writingResult').style.display = 'block';
+    }
+  } catch(e) {}
+
+  btn.innerHTML = originalHTML;
+  btn.disabled = false;
+}
+
+function applyImprovement() {
+  const desc = document.querySelector('[name=description]');
+  if (desc && improvedText) {
+    desc.value = improvedText;
+    document.getElementById('writingResult').style.display = 'none';
+    improvedText = '';
+  }
+}
+
+// ── Attach listeners when page loads ────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const titleField = document.querySelector('[name=title]');
+  const descField  = document.querySelector('[name=description]');
+
+  if (titleField) {
+    titleField.addEventListener('input', checkDuplicates);
+  }
+
+  if (descField) {
+    descField.addEventListener('input', function() {
+      checkDuplicates();
+      showWritingAssistant();
+    });
+    descField.addEventListener('focus', showWritingAssistant);
+  }
+});
+</script>

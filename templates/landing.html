@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceUp — Your Voice, Amplified</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --ink:    #0a0a0f;
+      --deep:   #0f0f1a;
+      --card:   #16162a;
+      --border: rgba(255,255,255,0.08);
+      --accent: #7c5cfc;
+      --accent2: #06d6a0;
+      --accent3: #ff6b6b;
+      --text:   #e2e2f0;
+      --muted:  #7a7a9a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1,h2,h3,h4 { font-family: 'Syne', sans-serif; line-height: 1.15; }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── GLOW ORBS ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.15;
+    }
+    .orb-1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -200px; }
+    .orb-2 { width: 400px; height: 400px; background: var(--accent2); bottom: 10%; right: -100px; }
+    .orb-3 { width: 300px; height: 300px; background: var(--accent3); top: 40%; left: 30%; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10,10,15,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: #fff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-brand span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-logo {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #fff; }
+    .btn-nav {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: opacity 0.2s, transform 0.2s !important;
+    }
+    .btn-nav:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,92,252,0.15);
+      border: 1px solid rgba(124,92,252,0.3);
+      color: #a78bfa;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s ease forwards;
+    }
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 800;
+      color: #fff;
+      max-width: 900px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin-bottom: 40px;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #5b3fd4);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(124,92,252,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(124,92,252,0.5); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* Stats bar */
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      margin-top: 72px;
+      padding-top: 48px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.6s 0.4s ease both;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      display: block;
+    }
+    .stat-label { color: var(--muted); font-size: 0.85rem; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 100px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-label {
+      text-align: center;
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto 64px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: transform 0.3s, border-color 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(124,92,252,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-4px); border-color: rgba(124,92,252,0.3); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 10px; }
+    .feature-card p { color: var(--muted); font-size: 0.92rem; line-height: 1.7; }
+
+    /* ── HOW IT WORKS ── */
+    .how {
+      padding: 100px 24px;
+      background: linear-gradient(180deg, transparent, rgba(124,92,252,0.05), transparent);
+    }
+    .how-inner { max-width: 900px; margin: 0 auto; }
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 64px;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2), transparent);
+    }
+    .step {
+      display: flex;
+      gap: 32px;
+      padding: 32px 0;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 56px; height: 56px; min-width: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #5b3fd4);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: #fff;
+      z-index: 1;
+      box-shadow: 0 0 0 6px var(--ink);
+    }
+    .step-content h3 { font-size: 1.2rem; color: #fff; margin-bottom: 8px; }
+    .step-content p { color: var(--muted); font-size: 0.95rem; }
+
+    /* ── PRICING ── */
+    .pricing {
+      padding: 100px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-top: 64px;
+    }
+    .price-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+      transition: transform 0.3s;
+    }
+    .price-card:hover { transform: translateY(-6px); }
+    .price-card.featured {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(124,92,252,0.15), var(--card));
+      box-shadow: 0 0 60px rgba(124,92,252,0.15);
+    }
+    .popular-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--accent), #5b3fd4);
+      color: #fff;
+      padding: 5px 20px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .plan-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+    .plan-price {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .price-amount {
+      font-family: 'Syne', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .price-period { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+    .plan-desc { color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .plan-features { list-style: none; margin-bottom: 36px; }
+    .plan-features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      font-size: 0.92rem;
+      padding: 8px 0;
+    }
+    .plan-features li i { color: var(--accent2); font-size: 0.85rem; }
+    .plan-features li.off { color: var(--muted); }
+    .plan-features li.off i { color: var(--muted); }
+    .btn-plan {
+      display: block;
+      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    .btn-plan-outline {
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-plan-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-plan-filled {
+      background: linear-gradient(135deg, var(--accent), #5b3fd4);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(124,92,252,0.35);
+    }
+    .btn-plan-filled:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-plan-dark {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+    }
+    .btn-plan-dark:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials {
+      padding: 100px 24px;
+      background: linear-gradient(180deg, transparent, rgba(6,214,160,0.04), transparent);
+    }
+    .testimonials-inner { max-width: 1100px; margin: 0 auto; }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-top: 64px;
+    }
+    .testimonial-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+    }
+    .stars { color: #fbbf24; font-size: 0.85rem; margin-bottom: 16px; }
+    .testimonial-text { color: var(--text); font-size: 0.95rem; line-height: 1.7; margin-bottom: 24px; font-style: italic; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .author-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+    }
+    .author-name { font-weight: 600; color: #fff; font-size: 0.9rem; }
+    .author-role { color: var(--muted); font-size: 0.8rem; }
+
+    /* ── CTA ── */
+    .cta {
+      padding: 100px 24px;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .cta h2 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; color: #fff; margin-bottom: 20px; }
+    .cta p { color: var(--muted); font-size: 1.1rem; margin-bottom: 40px; }
+    .cta-box {
+      background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(6,214,160,0.1));
+      border: 1px solid rgba(124,92,252,0.3);
+      border-radius: 24px;
+      padding: 60px 40px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      position: relative;
+      z-index: 1;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .hero-stats { gap: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Ambient Orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-brand">
+    <div class="nav-logo">🎙</div>
+    <span>VoiceUp</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/login" class="btn-nav">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <i class="fas fa-bolt"></i> AI-Powered School Suggestion System
+  </div>
+  <h1>
+    Give Students a<br>
+    <span class="grad">Real Voice</span> That<br>
+    Gets Heard
+  </h1>
+  <p>VoiceUp transforms student feedback into institutional change — with AI analysis, real-time tracking, and beautiful dashboards.</p>
+  <div class="hero-btns">
+    <a href="/register" class="btn-primary">
+      <i class="fas fa-rocket"></i> Start Free Today
+    </a>
+    <a href="/track" class="btn-secondary">
+      <i class="fas fa-search"></i> Track a Suggestion
+    </a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-num">10k+</span>
+      <span class="stat-label">Suggestions Submitted</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">94%</span>
+      <span class="stat-label">Resolution Rate</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">50+</span>
+      <span class="stat-label">Institutions</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">4.9★</span>
+      <span class="stat-label">Satisfaction Score</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <p class="section-label reveal">Why VoiceUp</p>
+  <h2 class="section-title reveal">Everything you need to<br>manage student feedback</h2>
+  <p class="section-sub reveal">Built for schools, universities and institutions that take student voices seriously.</p>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(124,92,252,0.15);color:#a78bfa;">
+        <i class="fas fa-brain"></i>
+      </div>
+      <h3>AI-Powered Analysis</h3>
+      <p>Every suggestion is automatically analyzed for sentiment, priority, and category — saving admins hours of manual work.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(6,214,160,0.15);color:#06d6a0;">
+        <i class="fas fa-stream"></i>
+      </div>
+      <h3>Live Progress Timeline</h3>
+      <p>Students watch their suggestion move through each stage in real time — from submitted to resolved, with full transparency.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(255,107,107,0.15);color:#ff6b6b;">
+        <i class="fas fa-bell"></i>
+      </div>
+      <h3>Smart Notifications</h3>
+      <p>Beautiful email notifications keep students informed at every step — status changes, admin responses, and more.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24;">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h3>Advanced Analytics</h3>
+      <p>Deep insights into suggestion trends, category breakdowns, SLA compliance, and satisfaction scores.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa;">
+        <i class="fas fa-robot"></i>
+      </div>
+      <h3>VoiceBot AI Chatbot</h3>
+      <p>Students get instant help from an AI chatbot before submitting — improving suggestion quality and reducing duplicates.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon" style="background:rgba(236,72,153,0.15);color:#f472b6;">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3>Anonymous Submissions</h3>
+      <p>Students can submit anonymously, encouraging honest feedback without fear of identification.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <p class="section-label reveal">The Process</p>
+    <h2 class="section-title reveal">From idea to impact<br>in 4 simple steps</h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Student Submits a Suggestion</h3>
+          <p>Students fill out a simple form — optionally anonymously. The AI chatbot VoiceBot helps them write a clear, impactful suggestion before submitting.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>AI Instantly Analyzes It</h3>
+          <p>The moment it's submitted, Gemini AI analyzes sentiment, suggests a category, assigns a priority, and generates a summary — automatically.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Admin Reviews & Responds</h3>
+          <p>Admins see a full dashboard with smart filters, can assign to team members, draft AI-powered responses, and update the status with one click.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Student Gets Notified & Rates</h3>
+          <p>A beautiful email lands in the student's inbox at every milestone. Once resolved, students rate their experience — closing the feedback loop.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <p class="section-label reveal">Pricing</p>
+  <h2 class="section-title reveal">Simple, transparent pricing</h2>
+  <p class="section-sub reveal">Start free. Scale as you grow. No hidden fees.</p>
+
+  <div class="pricing-grid">
+
+    <!-- FREE -->
+    <div class="price-card reveal">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">
+        <span class="price-amount">$0</span>
+      </div>
+      <div class="price-period">Free forever</div>
+      <div class="plan-desc">Perfect for small schools just getting started with student feedback.</div>
+      <ul class="plan-features">
+        <li><i class="fas fa-check"></i> Up to 100 suggestions/month</li>
+        <li><i class="fas fa-check"></i> Student & admin dashboard</li>
+        <li><i class="fas fa-check"></i> Basic status tracking</li>
+        <li><i class="fas fa-check"></i> Anonymous submissions</li>
+        <li class="off"><i class="fas fa-times"></i> AI analysis</li>
+        <li class="off"><i class="fas fa-times"></i> Email notifications</li>
+        <li class="off"><i class="fas fa-times"></i> Analytics & reports</li>
+      </ul>
+      <a href="/register" class="btn-plan btn-plan-outline">Get Started Free</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="price-card featured reveal">
+      <div class="popular-badge">⚡ Most Popular</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">
+        <span class="price-amount">$29</span>
+      </div>
+      <div class="price-period">per month, billed monthly</div>
+      <div class="plan-desc">Everything a growing school needs to manage feedback at scale.</div>
+      <ul class="plan-features">
+        <li><i class="fas fa-check"></i> Unlimited suggestions</li>
+        <li><i class="fas fa-check"></i> AI-powered analysis</li>
+        <li><i class="fas fa-check"></i> Beautiful email notifications</li>
+        <li><i class="fas fa-check"></i> Progress timeline</li>
+        <li><i class="fas fa-check"></i> Advanced analytics & PDF reports</li>
+        <li><i class="fas fa-check"></i> VoiceBot AI chatbot</li>
+        <li><i class="fas fa-check"></i> Priority support</li>
+      </ul>
+      <a href="/register" class="btn-plan btn-plan-filled">Start Pro Trial</a>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="price-card reveal">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">
+        <span class="price-amount">$99</span>
+      </div>
+      <div class="price-period">per month, billed annually</div>
+      <div class="plan-desc">For large institutions managing multiple departments and high volumes.</div>
+      <ul class="plan-features">
+        <li><i class="fas fa-check"></i> Everything in Pro</li>
+        <li><i class="fas fa-check"></i> Multi-department routing</li>
+        <li><i class="fas fa-check"></i> Custom branding & domain</li>
+        <li><i class="fas fa-check"></i> SMS notifications</li>
+        <li><i class="fas fa-check"></i> SLA management</li>
+        <li><i class="fas fa-check"></i> Dedicated account manager</li>
+        <li><i class="fas fa-check"></i> API access</li>
+      </ul>
+      <a href="mailto:hello@voiceup.com" class="btn-plan btn-plan-dark">Contact Sales</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="testimonials-inner">
+    <p class="section-label reveal">Testimonials</p>
+    <h2 class="section-title reveal">Loved by students &<br>administrators alike</h2>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"VoiceUp completely transformed how we handle student feedback. The AI analysis saves our admin team hours every week."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">P</div>
+          <div>
+            <div class="author-name">Prof. Kamau</div>
+            <div class="author-role">Dean of Students, Nairobi University</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"I submitted a suggestion about the library hours and got an email update within 24 hours. My suggestion was actually implemented!"</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#10b981,#059669);">A</div>
+          <div>
+            <div class="author-name">Amina W.</div>
+            <div class="author-role">3rd Year Student</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"The analytics dashboard gives us incredible insights into what students care most about. Best investment we've made this year."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">M</div>
+          <div>
+            <div class="author-name">Mr. Mwangi</div>
+            <div class="author-role">School Principal</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-box reveal">
+    <h2>Ready to amplify<br>student voices?</h2>
+    <p>Join 50+ institutions already using VoiceUp to create real change from student feedback.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/register" class="btn-primary"><i class="fas fa-rocket"></i> Get Started Free</a>
+      <a href="/login" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:12px;">
+    <strong style="color:#fff;font-family:'Syne',sans-serif;">🎙 VoiceUp</strong> — School Suggestion System
+  </p>
+  <p>Built with ❤️ for students who deserve to be heard &nbsp;·&nbsp; <a href="/admin/login">Admin Login</a> &nbsp;·&nbsp; <a href="/track">Track Suggestion</a></p>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Animated stats counter
+  function animateCount(el, target, suffix='') {
+    let start = 0;
+    const duration = 2000;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { start = target; clearInterval(timer); }
+      el.textContent = Math.floor(start).toLocaleString() + suffix;
+    }, 16);
+  }
+
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        animateCount(document.querySelectorAll('.stat-num')[0], 10000, 'k+');
+        animateCount(document.querySelectorAll('.stat-num')[1], 94, '%');
+        animateCount(document.querySelectorAll('.stat-num')[2], 50, '+');
+        statsObserver.disconnect();
+      }
+    });
+  });
+  const statsEl = document.querySelector('.hero-stats');
+  if (statsEl) statsObserver.observe(statsEl);
+</script>
+</body>
+</html>

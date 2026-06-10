@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Dashboard — VoiceUp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .model-card {
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      padding: 28px;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .model-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .model-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-voiceup">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
+      <i class="fas fa-arrow-left me-2"></i>Dashboard
+    </a>
+    <span class="navbar-brand mx-auto fw-bold">🧠 ML Dashboard</span>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light ms-auto">Logout</a>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4" style="max-width:1200px;">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" style="border-radius:12px;">
+      {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+
+  <!-- Status Banner -->
+  <div class="alert {% if ml_available %}alert-success{% else %}alert-warning{% endif %} mb-4"
+       style="border-radius:16px;">
+    <i class="fas {% if ml_available %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} me-2"></i>
+    {% if ml_available %}
+      Machine Learning models are <strong>active and running</strong>!
+    {% else %}
+      ML models are not available. Check that scikit-learn is installed.
+    {% endif %}
+  </div>
+
+  <!-- Stats Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="model-card text-center">
+        <div style="font-size:2.5rem;font-weight:800;color:#6366f1;">{{ total_suggestions }}</div>
+        <div class="text-muted">Total Suggestions</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="model-card text-center">
+        <div style="font-size:2.5rem;font-weight:800;color:#10b981;">{{ recent_suggestions }}</div>
+        <div class="text-muted">This Week</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="model-card text-center">
+        <div style="font-size:2.5rem;font-weight:800;color:#f59e0b;">{{ stats.spam_samples or 0 }}</div>
+        <div class="text-muted">Spam Training Samples</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="model-card text-center">
+        <div style="font-size:2.5rem;font-weight:800;color:#3b82f6;">{{ stats.priority_samples or 0 }}</div>
+        <div class="text-muted">Priority Training Samples</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Models -->
+  <div class="row g-4 mb-4">
+
+    <!-- Spam Detector -->
+    <div class="col-md-4">
+      <div class="model-card">
+        <div class="model-icon" style="background:#fee2e2;color:#ef4444;">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+        <h5 class="fw-bold mb-1">Spam Detector</h5>
+        <p class="text-muted small mb-3">
+          Automatically detects and flags spam or fake suggestions using Naive Bayes classifier.
+        </p>
+        <div class="d-flex align-items-center mb-3">
+          <span class="status-dot" style="background:{% if stats.spam_model %}#10b981{% else %}#ef4444{% endif %};"></span>
+          <span class="small">{% if stats.spam_model %}Model trained & active{% else %}Not trained{% endif %}</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge" style="background:#fee2e2;color:#ef4444;">Naive Bayes</span>
+          <span class="badge" style="background:#f1f5f9;color:#475569;">TF-IDF</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation Engine -->
+    <div class="col-md-4">
+      <div class="model-card">
+        <div class="model-icon" style="background:#dbeafe;color:#3b82f6;">
+          <i class="fas fa-lightbulb"></i>
+        </div>
+        <h5 class="fw-bold mb-1">Recommendation Engine</h5>
+        <p class="text-muted small mb-3">
+          Finds similar suggestions for students to vote on using cosine similarity and TF-IDF vectors.
+        </p>
+        <div class="d-flex align-items-center mb-3">
+          <span class="status-dot" style="background:#10b981;"></span>
+          <span class="small">Always active — no training needed</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge" style="background:#dbeafe;color:#1e40af;">Cosine Similarity</span>
+          <span class="badge" style="background:#f1f5f9;color:#475569;">TF-IDF</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Priority Predictor -->
+    <div class="col-md-4">
+      <div class="model-card">
+        <div class="model-icon" style="background:#fef3c7;color:#f59e0b;">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h5 class="fw-bold mb-1">Priority Predictor</h5>
+        <p class="text-muted small mb-3">
+          Predicts suggestion priority (low/medium/high/urgent) using Logistic Regression classifier.
+        </p>
+        <div class="d-flex align-items-center mb-3">
+          <span class="status-dot" style="background:{% if stats.priority_model %}#10b981{% else %}#ef4444{% endif %};"></span>
+          <span class="small">{% if stats.priority_model %}Model trained & active{% else %}Not trained{% endif %}</span>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge" style="background:#fef3c7;color:#92400e;">Logistic Regression</span>
+          <span class="badge" style="background:#f1f5f9;color:#475569;">TF-IDF</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retrain Section -->
+  <div class="model-card mb-4">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="fw-bold mb-1">🔄 Retrain Models</h5>
+        <p class="text-muted small mb-0">
+          Retrain ML models with the latest suggestions from your database.
+          The more data, the more accurate the models become!
+        </p>
+      </div>
+      <button class="btn btn-primary" onclick="retrainModels()" id="retrainBtn"
+              style="border-radius:12px;" {% if not ml_available %}disabled{% endif %}>
+        <i class="fas fa-sync-alt me-2"></i>Retrain Now
+      </button>
+    </div>
+    <div id="retrainResult" class="mt-3" style="display:none;">
+      <div class="alert alert-success mb-0" style="border-radius:10px;" id="retrainMsg"></div>
+    </div>
+  </div>
+
+  <!-- Test ML Features -->
+  <div class="model-card">
+    <h5 class="fw-bold mb-3">🧪 Test ML Features</h5>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Test Title</label>
+        <input type="text" id="testTitle" class="form-control"
+               placeholder="e.g. Fix the broken lights in corridor B"
+               style="border-radius:10px;">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Test Description</label>
+        <input type="text" id="testDesc" class="form-control"
+               placeholder="e.g. The lights have been broken for 2 weeks..."
+               style="border-radius:10px;">
+      </div>
+    </div>
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+      <button class="btn btn-outline-danger btn-sm" onclick="testSpam()" style="border-radius:10px;">
+        <i class="fas fa-shield-alt me-1"></i>Test Spam
+      </button>
+      <button class="btn btn-outline-warning btn-sm" onclick="testPriority()" style="border-radius:10px;">
+        <i class="fas fa-chart-line me-1"></i>Test Priority
+      </button>
+    </div>
+    <div id="testResults" class="mt-3"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+async function retrainModels() {
+  const btn = document.getElementById('retrainBtn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Training...';
+  btn.disabled  = true;
+  try {
+    const res  = await fetch('/admin/ml/retrain', { method: 'POST' });
+    const data = await res.json();
+    document.getElementById('retrainResult').style.display = 'block';
+    document.getElementById('retrainMsg').textContent = data.message || data.error;
+  } catch(e) { alert('Retrain failed.'); }
+  btn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Retrain Now';
+  btn.disabled  = false;
+}
+
+async function testSpam() {
+  const title = document.getElementById('testTitle').value;
+  const desc  = document.getElementById('testDesc').value;
+  if (!title) { alert('Enter a title first!'); return; }
+  const res  = await fetch('/api/ml/spam-check', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({title, description: desc})
+  });
+  const data = await res.json();
+  document.getElementById('testResults').innerHTML = `
+    <div class="alert ${data.is_spam ? 'alert-danger' : 'alert-success'}" style="border-radius:10px;">
+      <strong>${data.is_spam ? '🚨 SPAM DETECTED' : '✅ LEGITIMATE'}</strong>
+      — Confidence: ${data.confidence}%
+    </div>`;
+}
+
+async function testPriority() {
+  const title = document.getElementById('testTitle').value;
+  const desc  = document.getElementById('testDesc').value;
+  if (!title) { alert('Enter a title first!'); return; }
+  const res  = await fetch('/api/ml/predict-priority', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({title, description: desc})
+  });
+  const data = await res.json();
+  const colors = {urgent:'#ef4444',high:'#f97316',medium:'#f59e0b',low:'#10b981'};
+  document.getElementById('testResults').innerHTML = `
+    <div class="alert" style="border-radius:10px;background:${colors[data.priority]}20;border-color:${colors[data.priority]};">
+      <strong>🎯 Predicted Priority: ${data.priority.toUpperCase()}</strong>
+      — Confidence: ${data.confidence}%
+    </div>`;
+}
+</script>
+</body>
+</html>

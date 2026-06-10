@@ -1,0 +1,125 @@
+{# ML FEATURES FOR SUBMIT SUGGESTION PAGE #}
+
+<!-- Spam Warning -->
+<div id="spamWarning" style="display:none;background:#fee2e2;border-radius:12px;padding:16px;margin-bottom:12px;">
+  <div class="d-flex align-items-start gap-3">
+    <span style="font-size:1.5rem;">🚨</span>
+    <div>
+      <div class="fw-bold text-danger mb-1">Spam Detected!</div>
+      <div id="spamMessage" class="small text-danger"></div>
+      <div class="text-muted small mt-1">Please write a genuine suggestion.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ML Priority Suggestion -->
+<div id="mlPrioritySuggestion" style="display:none;background:#fef3c7;border-radius:12px;border-left:4px solid #f59e0b;padding:12px 16px;margin-bottom:12px;">
+  <div class="d-flex align-items-center gap-2">
+    <span>🎯</span>
+    <span class="fw-semibold">ML suggests priority: </span>
+    <span id="mlPriorityText" class="fw-bold"></span>
+    <span id="mlPriorityConf" class="text-muted small ms-2"></span>
+    <button type="button" class="btn btn-sm btn-warning ms-2" onclick="applyMLPriority()" style="border-radius:8px;padding:2px 10px;">Apply</button>
+  </div>
+</div>
+
+<!-- Recommendations -->
+<div id="mlRecommendations" style="display:none;border-radius:16px;border-left:4px solid #3b82f6;background:#fff;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+  <div class="fw-bold mb-2"><i class="fas fa-lightbulb me-2 text-primary"></i>Similar suggestions — consider voting instead!</div>
+  <div id="mlRecList"></div>
+</div>
+
+<script>
+let mlTimeout = null;
+let suggestedPrio = '';
+
+function runMLChecks() {
+  clearTimeout(mlTimeout);
+  mlTimeout = setTimeout(async () => {
+    const title = document.querySelector('[name=title]')?.value?.trim();
+    const desc  = document.querySelector('[name=description]')?.value?.trim();
+    if (!title || title.length < 5) return;
+    await Promise.all([
+      checkSpamML(title, desc),
+      predictPriorityML(title, desc),
+      getRecommendationsML(title, desc)
+    ]);
+  }, 1200);
+}
+
+async function checkSpamML(title, desc) {
+  try {
+    const res  = await fetch('/api/ml/spam-check', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, description: desc})
+    });
+    const data = await res.json();
+    const box  = document.getElementById('spamWarning');
+    if (data.is_spam) {
+      document.getElementById('spamMessage').textContent = `Detected as spam (${data.confidence}% confidence). Please write a genuine suggestion.`;
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { console.log('Spam check error:', e); }
+}
+
+async function predictPriorityML(title, desc) {
+  try {
+    const res  = await fetch('/api/ml/predict-priority', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, description: desc})
+    });
+    const data = await res.json();
+    const box  = document.getElementById('mlPrioritySuggestion');
+    suggestedPrio = data.priority;
+    const colors = {urgent:'#ef4444',high:'#f97316',medium:'#f59e0b',low:'#10b981'};
+    document.getElementById('mlPriorityText').textContent  = data.priority.toUpperCase();
+    document.getElementById('mlPriorityText').style.color  = colors[data.priority] || '#6366f1';
+    document.getElementById('mlPriorityConf').textContent  = `(${data.confidence}% confidence)`;
+    box.style.display = 'block';
+  } catch(e) { console.log('Priority error:', e); }
+}
+
+async function getRecommendationsML(title, desc) {
+  try {
+    const res  = await fetch('/api/ml/recommendations', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, description: desc})
+    });
+    const data = await res.json();
+    const box  = document.getElementById('mlRecommendations');
+    if (data.recommendations && data.recommendations.length > 0) {
+      document.getElementById('mlRecList').innerHTML = data.recommendations.map(r => `
+        <div style="padding:8px 0;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;font-size:0.88rem;">${r.title}</div>
+            <div style="color:#64748b;font-size:0.75rem;">${r.category} · ${r.vote_count} votes</div>
+          </div>
+          <span style="background:#dbeafe;color:#1e40af;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;">${r.similarity}% match</span>
+        </div>`).join('');
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { console.log('Rec error:', e); }
+}
+
+function applyMLPriority() {
+  const sel = document.querySelector('[name=priority]');
+  if (sel && suggestedPrio) {
+    sel.value = suggestedPrio;
+    document.getElementById('mlPrioritySuggestion').style.display = 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const t = document.querySelector('[name=title]');
+  const d = document.querySelector('[name=description]');
+  if (t) t.addEventListener('input', runMLChecks);
+  if (d) d.addEventListener('input', runMLChecks);
+});
+</script>

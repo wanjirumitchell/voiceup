@@ -104,9 +104,7 @@
             <input type="hidden" name="action" value="add_response">
             <textarea name="response_text" class="form-control mb-2" rows="3" placeholder="Write a public response visible to the user..."></textarea>
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-reply me-1"></i>Send Response</button>
-            <button type="button" class="btn btn-outline-primary btn-sm ms-2" onclick="getAIDraft()">
-              <i class="fas fa-robot me-1"></i>AI Draft
-            </button>
+           {% include 'admin/_smart_responses.html' %}
           </form>
         </div>
       </div>

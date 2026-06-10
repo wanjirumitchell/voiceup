@@ -1,0 +1,87 @@
+{# ═══════════════════════════════════════════════════════════════════
+   SMART RESPONSE SUGGESTIONS FOR ADMIN
+   Save as: templates/admin/_smart_responses.html
+   Include in admin/suggestion_detail.html INSIDE the response form
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<div class="mt-2">
+  <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="getAIDraft()">
+    <i class="fas fa-robot me-1"></i>AI Draft
+  </button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="getSmartResponses()">
+    <i class="fas fa-magic me-1"></i>3 Style Options
+  </button>
+</div>
+
+<!-- Smart Response Options -->
+<div id="smartResponsePanel" style="display:none;" class="mt-3">
+  <div class="fw-semibold small mb-2">Choose a response style:</div>
+  <div id="smartResponseList"></div>
+</div>
+
+<script>
+async function getSmartResponses() {
+  const btn = event.target.closest('button');
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+  btn.disabled  = true;
+
+  try {
+    const res  = await fetch('/admin/suggestion/{{ suggestion.id }}/smart-responses', { method: 'POST' });
+    const data = await res.json();
+
+    if (data.responses) {
+      const panel = document.getElementById('smartResponsePanel');
+      const list  = document.getElementById('smartResponseList');
+
+      const styleColors = {
+        formal:   '#3b82f6',
+        friendly: '#10b981',
+        detailed: '#8b5cf6'
+      };
+
+      list.innerHTML = data.responses.map((r, i) => `
+        <div class="p-3 rounded-3 mb-2 border" style="cursor:pointer;transition:all 0.2s;"
+             onclick="useSmartResponse(${i})"
+             onmouseover="this.style.borderColor='${styleColors[r.style]||'#6366f1'}'"
+             onmouseout="this.style.borderColor='#e2e8f0'"
+             id="response_option_${i}">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge" style="background:${styleColors[r.style]||'#6366f1'};color:white;">
+              ${r.label || r.style}
+            </span>
+            <span class="text-muted small">Click to use</span>
+          </div>
+          <p class="mb-0 small" id="response_text_${i}">${r.response}</p>
+        </div>
+      `).join('');
+
+      panel.style.display = 'block';
+    } else {
+      alert(data.error || 'Could not generate responses. Check your API key.');
+    }
+  } catch(e) {
+    alert('Error generating responses.');
+  }
+
+  btn.innerHTML = originalHTML;
+  btn.disabled  = false;
+}
+
+function useSmartResponse(index) {
+  const text = document.getElementById(`response_text_${index}`)?.textContent;
+  if (text) {
+    document.querySelector('[name=response_text]').value = text;
+    document.getElementById('smartResponsePanel').style.display = 'none';
+
+    // Highlight the textarea
+    const ta = document.querySelector('[name=response_text]');
+    ta.style.borderColor = '#6366f1';
+    ta.style.boxShadow   = '0 0 0 3px rgba(99,102,241,0.15)';
+    setTimeout(() => {
+      ta.style.borderColor = '';
+      ta.style.boxShadow   = '';
+    }, 2000);
+  }
+}
+</script>

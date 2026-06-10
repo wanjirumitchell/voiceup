@@ -1,0 +1,229 @@
+{# ═══════════════════════════════════════════════════════════════════
+   DARK MODE TOGGLE
+   Save as: templates/_darkmode.html
+   Include in ALL templates just before </body>
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<!-- Dark Mode Toggle Button -->
+<button id="darkModeToggle" onclick="toggleDarkMode()"
+  title="Toggle Dark Mode"
+  style="
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #6366f1;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  "
+  onmouseover="this.style.transform='scale(1.1)'"
+  onmouseout="this.style.transform='scale(1)'">
+  <i class="fas fa-moon" id="darkModeIcon"></i>
+</button>
+
+<style>
+/* ── DARK MODE STYLES ── */
+body.dark-mode {
+  background: #0f0f1a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Cards */
+body.dark-mode .card,
+body.dark-mode .chart-card,
+body.dark-mode .suggestions-card,
+body.dark-mode .stat-card,
+body.dark-mode .timeline-card,
+body.dark-mode .rank-card,
+body.dark-mode .testimonial-card,
+body.dark-mode .price-card {
+  background: #1e1b4b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Text */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode .fw-bold,
+body.dark-mode .fw-semibold,
+body.dark-mode .tl-title,
+body.dark-mode .stat-card-number,
+body.dark-mode .stat-number {
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode .text-muted,
+body.dark-mode .tl-meta,
+body.dark-mode .stat-card-label,
+body.dark-mode .stat-label,
+body.dark-mode .chart-card-sub {
+  color: #94a3b8 !important;
+}
+
+/* Navbar */
+body.dark-mode .navbar-voiceup {
+  background: #1e1b4b !important;
+}
+body.dark-mode .dash-nav {
+  background: #0f0f1a !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* Forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background: #1e1b4b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .form-control::placeholder {
+  color: #64748b !important;
+}
+
+/* Table */
+body.dark-mode .table {
+  color: #e2e8f0 !important;
+}
+body.dark-mode .table-light {
+  background: #16162a !important;
+  color: #94a3b8 !important;
+}
+
+/* Alerts */
+body.dark-mode .alert {
+  background: #1e1b4b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Suggestion rows */
+body.dark-mode .suggestion-row:hover {
+  background: rgba(99,102,241,0.1) !important;
+}
+body.dark-mode .suggestion-row {
+  border-color: rgba(255,255,255,0.05) !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .suggestion-title {
+  color: #f1f5f9 !important;
+}
+
+/* Timeline */
+body.dark-mode .timeline-content {
+  background: #16162a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+body.dark-mode .tl-note {
+  background: #0f0f1a !important;
+  color: #94a3b8 !important;
+}
+
+/* Mobile nav */
+body.dark-mode .mobile-nav {
+  background: #1e1b4b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+body.dark-mode .mobile-nav-item {
+  color: #64748b !important;
+}
+body.dark-mode .mobile-nav-item.active {
+  color: #818cf8 !important;
+}
+
+/* Welcome hero - keep gradient */
+body.dark-mode .welcome-hero {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 50%, #0891b2 100%) !important;
+}
+
+/* Quick actions */
+body.dark-mode .quick-action,
+body.dark-mode .quick-action-card {
+  background: #1e1b4b !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .quick-action:hover,
+body.dark-mode .quick-action-card:hover {
+  border-color: #6366f1 !important;
+}
+
+/* Background */
+body.dark-mode .bg-light,
+body.dark-mode .table-light th {
+  background: #16162a !important;
+}
+
+/* Modal */
+body.dark-mode .modal-content {
+  background: #1e1b4b !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* Input groups */
+body.dark-mode .input-group-text {
+  background: #16162a !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+
+/* Smooth transition */
+body, body * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease !important;
+}
+</style>
+
+<script>
+function toggleDarkMode() {
+  const body = document.body;
+  const icon = document.getElementById('darkModeIcon');
+  const btn  = document.getElementById('darkModeToggle');
+
+  body.classList.toggle('dark-mode');
+
+  if (body.classList.contains('dark-mode')) {
+    icon.className = 'fas fa-sun';
+    btn.style.background = '#f59e0b';
+    btn.style.boxShadow  = '0 4px 16px rgba(245,158,11,0.4)';
+    localStorage.setItem('voiceup_darkmode', 'true');
+  } else {
+    icon.className = 'fas fa-moon';
+    btn.style.background = '#6366f1';
+    btn.style.boxShadow  = '0 4px 16px rgba(99,102,241,0.4)';
+    localStorage.setItem('voiceup_darkmode', 'false');
+  }
+}
+
+// Apply saved preference on load
+document.addEventListener('DOMContentLoaded', function() {
+  const saved = localStorage.getItem('voiceup_darkmode');
+  if (saved === 'true') {
+    document.body.classList.add('dark-mode');
+    const icon = document.getElementById('darkModeIcon');
+    const btn  = document.getElementById('darkModeToggle');
+    if (icon) icon.className = 'fas fa-sun';
+    if (btn) {
+      btn.style.background = '#f59e0b';
+      btn.style.boxShadow  = '0 4px 16px rgba(245,158,11,0.4)';
+    }
+  }
+});
+</script>

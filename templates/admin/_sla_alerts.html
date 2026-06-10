@@ -1,0 +1,55 @@
+{# Save as: templates/admin/_sla_alerts.html #}
+{# Include in admin/dashboard.html with: {% include 'admin/_sla_alerts.html' %} #}
+
+<div id="slaAlertBox" style="display:none;" class="mb-4">
+  <div class="card border-0" style="border-radius:16px;border-left:4px solid #ef4444;background:linear-gradient(135deg,#fff5f5,#fff);">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 text-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          SLA Warnings <span id="slaCount" class="badge bg-danger ms-1">0</span>
+        </h6>
+        <button class="btn btn-sm btn-outline-danger" onclick="loadSLAAlerts()">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div id="slaList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadSLAAlerts() {
+  try {
+    const res  = await fetch('/admin/api/sla-alerts');
+    const data = await res.json();
+    const box  = document.getElementById('slaAlertBox');
+    const list = document.getElementById('slaList');
+    const cnt  = document.getElementById('slaCount');
+
+    if (data.alerts && data.alerts.length > 0) {
+      box.style.display = 'block';
+      cnt.textContent   = data.count;
+      list.innerHTML    = data.alerts.map(a => `
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+          <div>
+            <a href="/admin/suggestion/${a.id}" class="fw-semibold text-decoration-none text-dark">${a.title}</a>
+            <div class="text-muted small">${a.fullname} · ${a.priority} priority</div>
+          </div>
+          <div class="text-end">
+            <span class="badge ${a.hours_left < 0 ? 'bg-danger' : 'bg-warning text-dark'}">
+              ${a.hours_left < 0 ? 'OVERDUE' : Math.abs(a.hours_left) + 'h left'}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { console.log('SLA check failed:', e); }
+}
+
+// Load on page start and every 5 minutes
+loadSLAAlerts();
+setInterval(loadSLAAlerts, 300000);
+</script>

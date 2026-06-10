@@ -1,307 +1,593 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — VoiceUp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger:  #ef4444;
+      --info:    #3b82f6;
+      --bg:      #f0f2ff;
+      --card:    #ffffff;
+      --text:    #1e293b;
+      --muted:   #64748b;
+      --border:  #e2e8f0;
+    }
+    body {
+      background: var(--bg);
+      font-family: 'Cabinet Grotesk', sans-serif;
+      color: var(--text);
+    }
+    h1,h2,h3,h4,h5,h6 { font-family: 'Clash Display', sans-serif; }
+
+    /* ── NAVBAR ── */
+    .admin-nav {
+      background: #1e1b4b;
+      padding: 0 28px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-brand {
+      font-family: 'Clash Display', sans-serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: #fff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .admin-nav-link {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-nav-link:hover, .admin-nav-link.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .admin-nav-link.danger { color: #fca5a5; }
+    .admin-nav-link.danger:hover { background: rgba(239,68,68,0.2); color: #fca5a5; }
+
+    /* ── STAT CARDS ── */
+    .stat-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+    .stat-card-icon {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .stat-card-number {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-card-label { color: var(--muted); font-size: 0.85rem; }
+    .stat-card-trend {
+      position: absolute;
+      top: 20px; right: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── CHART CARDS ── */
+    .chart-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 28px;
+      border: 1px solid var(--border);
+      height: 100%;
+    }
+    .chart-card-title {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .chart-card-sub {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+    }
+
+    /* ── SUGGESTIONS TABLE ── */
+    .suggestions-card {
+      background: var(--card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .suggestions-card-header {
+      padding: 24px 28px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 0 28px 16px;
+    }
+    .filter-btn {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .suggestion-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 28px;
+      border-top: 1px solid var(--border);
+      gap: 16px;
+      transition: background 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .suggestion-row:hover { background: #f8faff; }
+    .priority-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .priority-urgent { background: #ef4444; }
+    .priority-high   { background: #f97316; }
+    .priority-medium { background: #f59e0b; }
+    .priority-low    { background: #10b981; }
+
+    .status-pill {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .s-pending      { background:#fef3c7;color:#92400e; }
+    .s-under_review { background:#dbeafe;color:#1e40af; }
+    .s-resolved     { background:#d1fae5;color:#065f46; }
+    .s-rejected     { background:#fee2e2;color:#991b1b; }
+
+    /* ── QUICK ACTIONS ── */
+    .quick-action-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s;
+      display: block;
+    }
+    .quick-action-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(99,102,241,0.12);
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    .qa-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin: 0 auto 10px;
+    }
+    .qa-label { font-weight: 600; font-size: 0.82rem; }
+
+    /* ── SLA ALERT ── */
+    .sla-alert {
+      background: linear-gradient(135deg, #fff5f5, #fff);
+      border: 1px solid #fecaca;
+      border-left: 4px solid #ef4444;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.5s ease forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up:nth-child(1) { animation-delay: 0.05s; }
+    .fade-up:nth-child(2) { animation-delay: 0.1s; }
+    .fade-up:nth-child(3) { animation-delay: 0.15s; }
+    .fade-up:nth-child(4) { animation-delay: 0.2s; }
+  </style>
 </head>
 <body>
 
-<nav class="navbar navbar-voiceup navbar-expand-lg">
-  <div class="container-fluid px-4">
-    <a class="navbar-brand" href="#"><i class="fas fa-shield-alt me-2"></i>VoiceUp Admin</a>
-    <div class="d-flex align-items-center gap-3 ms-auto">
-      <button class="btn btn-sm theme-toggle" id="themeToggle"><i class="fas fa-moon" id="themeIcon"></i></button>
-      {% if session.get("is_super_admin") %}
-      <a href="{{ url_for('manage_admins') }}" class="btn btn-sm btn-warning text-dark fw-semibold">
-        <i class="fas fa-crown me-1"></i>Manage Admins
-      </a>
-      {% endif %}
-      <a href="{{ url_for('admin_profile') }}" class="btn btn-sm btn-outline-light">
-  <i class="fas fa-user me-1"></i>Profile
-</a>
-<span class="text-white opacity-75 small"><i class="fas fa-user me-1"></i>{{ session.admin_name }}</span>
-      <a href="{{ url_for('admin_logout') }}" class="btn btn-sm btn-outline-light">
-        <i class="fas fa-sign-out-alt me-1"></i>Logout
-      </a>
-    </div>
+<!-- NAVBAR -->
+<nav class="admin-nav">
+  <a href="{{ url_for('admin_dashboard') }}" class="admin-brand">
+    🎙 VoiceUp <span style="font-size:0.7rem;opacity:0.6;font-family:'Cabinet Grotesk',sans-serif;font-weight:400;">Admin</span>
+  </a>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link active">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="{{ url_for('manage_universities') }}" class="admin-nav-link">
+      <i class="fas fa-university"></i> Universities
+    </a>
+    <a href="{{ url_for('manage_users') }}" class="admin-nav-link">
+      <i class="fas fa-users"></i> Users
+    </a>
+    <a href="{{ url_for('manage_admins') }}" class="admin-nav-link">
+      <i class="fas fa-user-shield"></i> Admins
+    </a>
+    <a href="{{ url_for('ai_trends') }}" class="admin-nav-link">
+      <i class="fas fa-brain"></i> AI
+    </a>
+    <a href="{{ url_for('system_settings') }}" class="admin-nav-link">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+    <a href="{{ url_for('admin_logout') }}" class="admin-nav-link danger">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
   </div>
 </nav>
 
-<div class="container-fluid px-4 mt-4">
+<div class="container-fluid px-4 py-4" style="max-width:1600px;">
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}{% for cat,msg in messages %}
-    <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm">
+    <div class="alert alert-{{ cat }} alert-dismissible fade show mb-3" style="border-radius:12px;">
       {{ msg|safe }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endfor %}{% endif %}
   {% endwith %}
 
-  <!-- Stats -->
+  <!-- SLA Alerts -->
+  {% include 'admin/_sla_alerts.html' %}
+
+  <!-- Stats Row -->
   <div class="row g-3 mb-4">
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3">
-        <div class="stat-mini-number">{{ stats.total }}</div>
-        <div class="stat-mini-label">Total</div>
+    <div class="col-6 col-md-3 fade-up">
+      <div class="stat-card">
+        <div class="stat-card-icon" style="background:#ede9fe;color:#6366f1;">
+          <i class="fas fa-lightbulb"></i>
+        </div>
+        <div class="stat-card-number">{{ stats.total }}</div>
+        <div class="stat-card-label">Total Suggestions</div>
+        <span class="stat-card-trend" style="background:#ede9fe;color:#6366f1;">All Time</span>
       </div>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3 warning">
-        <div class="stat-mini-number">{{ stats.pending }}</div>
-        <div class="stat-mini-label">Pending</div>
+    <div class="col-6 col-md-3 fade-up">
+      <div class="stat-card">
+        <div class="stat-card-icon" style="background:#fef3c7;color:#f59e0b;">
+          <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="stat-card-number">{{ stats.pending }}</div>
+        <div class="stat-card-label">Pending Review</div>
+        <span class="stat-card-trend" style="background:#fef3c7;color:#f59e0b;">Needs Action</span>
       </div>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3 info">
-        <div class="stat-mini-number">{{ stats.under_review }}</div>
-        <div class="stat-mini-label">Reviewing</div>
+    <div class="col-6 col-md-3 fade-up">
+      <div class="stat-card">
+        <div class="stat-card-icon" style="background:#d1fae5;color:#10b981;">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-card-number">{{ stats.resolved }}</div>
+        <div class="stat-card-label">Resolved</div>
+        <span class="stat-card-trend" style="background:#d1fae5;color:#10b981;">
+          {{ ((stats.resolved / stats.total * 100)|int if stats.total else 0) }}% Rate
+        </span>
       </div>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3 success">
-        <div class="stat-mini-number">{{ stats.resolved }}</div>
-        <div class="stat-mini-label">Resolved</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3 danger">
-        <div class="stat-mini-number">{{ stats.overdue }}</div>
-        <div class="stat-mini-label">Overdue</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-2">
-      <div class="stat-card-mini text-center p-3">
-        <div class="stat-mini-number">{{ avg_rating }}<small style="font-size:.6em">★</small></div>
-        <div class="stat-mini-label">Avg Rating</div>
+    <div class="col-6 col-md-3 fade-up">
+      <div class="stat-card">
+        <div class="stat-card-icon" style="background:#fee2e2;color:#ef4444;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-card-number">{{ stats.overdue }}</div>
+        <div class="stat-card-label">Overdue SLA</div>
+        <span class="stat-card-trend" style="background:#fee2e2;color:#ef4444;">Urgent</span>
       </div>
     </div>
   </div>
 
-  <!-- Charts Row -->
   <div class="row g-4 mb-4">
-    <div class="col-md-8">
-      <div class="card shadow-sm">
-        <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-          <h6 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Monthly Submissions</h6>
-          <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ url_for('export_csv') }}" class="btn btn-sm btn-outline-success">
-              <i class="fas fa-file-csv me-1"></i>CSV
-            </a>
-            <a href="{{ url_for('export_report') }}" class="btn btn-sm btn-outline-primary" target="_blank">
-              <i class="fas fa-file-alt me-1"></i>Report
-            </a>
-            <a href="{{ url_for('admin_leaderboard') }}" class="btn btn-sm btn-outline-warning">
-              <i class="fas fa-trophy me-1"></i>Leaderboard
-            </a>
-            <a href="{{ url_for('ai_trends') }}" class="btn btn-sm btn-outline-primary">
-              <i class="fas fa-brain me-1"></i>AI Trends
-            </a>
-            {% if session.get('is_super_admin') %}
-            <a href="{{ url_for('manage_users') }}" class="btn btn-sm btn-outline-info">
-              <i class="fas fa-users me-1"></i>Users
-            </a>
-            <a href="{{ url_for('system_settings') }}" class="btn btn-sm btn-outline-secondary">
-              <i class="fas fa-cog me-1"></i><a href="{{ url_for('departments') }}" class="btn btn-sm btn-outline-primary">
-  <i class="fas fa-building me-1"></i>Departments
-</a>
-<a href="{{ url_for('email_settings') }}" class="btn btn-sm btn-outline-info">
-  <i class="fas fa-envelope me-1"></i>Email
-</a>
-<a href="{{ url_for('pdf_report') }}" class="btn btn-sm btn-outline-danger" target="_blank">
-  <i class="fas fa-file-pdf me-1"></i>PDF Report
-</a>Settings
-            </a>
-            {% endif %}
-          </div>
-        </div>
-        <div class="card-body"><canvas id="monthlyChart" height="100"></canvas></div>
+    <!-- Monthly Chart -->
+    <div class="col-md-8 fade-up">
+      <div class="chart-card">
+        <div class="chart-card-title">Monthly Submissions</div>
+        <div class="chart-card-sub">Suggestion volume throughout the year</div>
+        <canvas id="monthlyChart" height="80"></canvas>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header border-0 pt-4 px-4">
-          <h6 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>By Category</h6>
-        </div>
-        <div class="card-body d-flex align-items-center justify-content-center">
-          <canvas id="catChart" height="200"></canvas>
-        </div>
+
+    <!-- Category Chart -->
+    <div class="col-md-4 fade-up">
+      <div class="chart-card">
+        <div class="chart-card-title">By Category</div>
+        <div class="chart-card-sub">Distribution across departments</div>
+        <canvas id="categoryChart" height="180"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Filters -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <form method="GET" class="row g-2 align-items-end">
-        <div class="col-md-3">
-          <input type="text" name="search" class="form-control form-control-sm"
-                 placeholder="Search title, ID..." value="{{ search }}">
-        </div>
-        <div class="col-md-2">
-          <select name="status" class="form-select form-select-sm">
-            <option value="all" {% if status_filter=='all' %}selected{% endif %}>All Status</option>
-            {% for s in ['pending','under_review','resolved','rejected'] %}
-            <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s|replace('_',' ')|title }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-2">
-          <select name="category" class="form-select form-select-sm">
-            <option value="all" {% if category_filter=='all' %}selected{% endif %}>All Category</option>
-            {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
-            <option value="{{ cat }}" {% if category_filter==cat %}selected{% endif %}>{{ cat|title }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-2">
-          <select name="priority" class="form-select form-select-sm">
-            <option value="all" {% if priority_filter=='all' %}selected{% endif %}>All Priority</option>
-            {% for p in ['urgent','high','medium','low'] %}
-            <option value="{{ p }}" {% if priority_filter==p %}selected{% endif %}>{{ p|title }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-3">
-          <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm flex-grow-1"><i class="fas fa-search me-1"></i>Search</button>
-            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+  <div class="row g-4">
+    <!-- Suggestions Table -->
+    <div class="col-md-9 fade-up">
+      <div class="suggestions-card">
+        <div class="suggestions-card-header">
+          <div>
+            <div class="chart-card-title mb-0">All Suggestions</div>
+            <div class="chart-card-sub mb-0">{{ total }} total · Page {{ page }} of {{ total_pages }}</div>
           </div>
+          <!-- Search -->
+          <form class="d-flex gap-2">
+            <input type="text" name="search" value="{{ search }}"
+                   class="form-control form-control-sm" placeholder="Search..."
+                   style="border-radius:10px;width:200px;">
+            <button type="submit" class="btn btn-sm btn-primary" style="border-radius:10px;">
+              <i class="fas fa-search"></i>
+            </button>
+          </form>
         </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- Suggestions Table -->
-  <form method="POST" action="/admin/bulk-update" id="bulkForm">
-  <div class="card shadow-sm">
-    <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-      <h6 class="fw-bold mb-0">Suggestions ({{ total }})</h6>
-      <div class="d-flex gap-2 align-items-center" id="bulkControls" style="display:none!important">
-        <span class="text-muted small" id="selectedCount">0 selected</span>
-        <select name="bulk_status" class="form-select form-select-sm" style="width:auto">
-          <option value="">Change Status To...</option>
-          <option value="pending">Pending</option>
-          <option value="under_review">Under Review</option>
-          <option value="resolved">Resolved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">Clear</button>
+        <!-- Filters -->
+        <div class="filter-bar">
+          <a href="?" class="filter-btn {% if status_filter=='all' %}active{% endif %}">All</a>
+          <a href="?status=pending" class="filter-btn {% if status_filter=='pending' %}active{% endif %}">Pending</a>
+          <a href="?status=under_review" class="filter-btn {% if status_filter=='under_review' %}active{% endif %}">Under Review</a>
+          <a href="?status=resolved" class="filter-btn {% if status_filter=='resolved' %}active{% endif %}">Resolved</a>
+          <a href="?status=rejected" class="filter-btn {% if status_filter=='rejected' %}active{% endif %}">Rejected</a>
+        </div>
+
+        <!-- Suggestions -->
+        {% for s in suggestions %}
+        <a href="{{ url_for('admin_suggestion_detail', sid=s.id) }}" class="suggestion-row">
+          <div class="priority-dot priority-{{ s.priority }}"></div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold" style="font-size:0.9rem;">
+              {{ s.title[:55] }}{% if s.title|length > 55 %}...{% endif %}
+            </div>
+            <div class="text-muted" style="font-size:0.75rem;">
+              <span><i class="fas fa-user me-1"></i>{{ s.fullname }}</span>
+              <span class="ms-3"><i class="fas fa-tag me-1"></i>{{ s.category|title }}</span>
+              <span class="ms-3"><i class="fas fa-clock me-1"></i>{{ s.created_at.strftime('%b %d') if s.created_at else '' }}</span>
+              {% if s.response_count > 0 %}
+              <span class="ms-3"><i class="fas fa-comment me-1"></i>{{ s.response_count }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="status-pill s-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span>
+            <span class="text-muted small"><i class="fas fa-thumbs-up me-1"></i>{{ s.vote_count }}</span>
+          </div>
+        </a>
+        {% endfor %}
+
+        {% if not suggestions %}
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+          <p>No suggestions found.</p>
+        </div>
+        {% endif %}
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="d-flex justify-content-center gap-2 p-4">
+          {% if page > 1 %}
+          <a href="?page={{ page-1 }}&status={{ status_filter }}&search={{ search }}"
+             class="btn btn-sm btn-outline-primary" style="border-radius:10px;">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+          {% endif %}
+          <span class="btn btn-sm btn-primary" style="border-radius:10px;">{{ page }}</span>
+          {% if page < total_pages %}
+          <a href="?page={{ page+1 }}&status={{ status_filter }}&search={{ search }}"
+             class="btn btn-sm btn-outline-primary" style="border-radius:10px;">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th class="px-4"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>SLA</th>
-            <th>Votes</th>
-            <th>Assigned</th>
-            <th>Date</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in suggestions %}
-          <tr>
-            <td class="px-4"><input type="checkbox" name="suggestion_ids" value="{{ s.id }}" class="row-check" onchange="updateBulkControls()"></td>
-            <td><code class="small">{{ s.suggestion_id }}</code></td>
-            <td>
-              <div class="fw-semibold">{{ s.title[:40] }}{% if s.title|length > 40 %}...{% endif %}</div>
-              <small class="text-muted">{{ s.fullname }}{% if s.is_anonymous %} (anon){% endif %}</small>
-            </td>
-            <td><span class="badge badge-category">{{ s.category|title }}</span></td>
-            <td><span class="badge badge-priority-{{ s.priority }}">{{ s.priority|title }}</span></td>
-            <td><span class="badge badge-status-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span></td>
-            <td>
-              {% set sla = s.sla_status %}
-              <span class="badge {% if sla=='overdue' %}bg-danger{% elif sla=='at_risk' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                {{ sla|replace('_',' ')|title }}
-              </span>
-            </td>
-            <td><span class="badge bg-light text-dark border"><i class="fas fa-thumbs-up me-1"></i>{{ s.vote_count }}</span></td>
-            <td><small class="text-muted">{{ s.assigned_name or '—' }}</small></td>
-            <td><small class="text-muted">{{ s.created_at.strftime('%b %d') if s.created_at else '' }}</small></td>
-            <td>
-              <a href="{{ url_for('admin_suggestion_detail', sid=s.id) }}" class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-eye"></i>
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    <!-- Right Sidebar -->
+    <div class="col-md-3 fade-up">
+      <!-- Quick Actions -->
+      <div class="chart-card-title mb-3">Quick Actions</div>
+      <div class="row g-2 mb-4">
+        <div class="col-6">
+          <a href="{{ url_for('bulk_email') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#ede9fe;color:#6366f1;">
+              <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="qa-label">Bulk Email</div>
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('export_csv') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#d1fae5;color:#10b981;">
+              <i class="fas fa-file-csv"></i>
+            </div>
+            <div class="qa-label">Export CSV</div>
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('ai_trends') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#dbeafe;color:#3b82f6;">
+              <i class="fas fa-brain"></i>
+            </div>
+            <div class="qa-label">AI Trends</div>
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('admin_leaderboard') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#fef3c7;color:#f59e0b;">
+              <i class="fas fa-trophy"></i>
+            </div>
+            <div class="qa-label">Leaderboard</div>
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('ai_sentiment_dashboard') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#fce7f3;color:#ec4899;">
+              <i class="fas fa-heart"></i>
+            </div>
+            <div class="qa-label">Sentiment</div>
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('pdf_report') }}" class="quick-action-card">
+            <div class="qa-icon" style="background:#fee2e2;color:#ef4444;">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div class="qa-label">PDF Report</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Avg Rating -->
+      <div class="chart-card mb-3">
+        <div class="chart-card-title mb-2">⭐ Avg Satisfaction</div>
+        <div style="font-size:2.5rem;font-weight:700;font-family:'Clash Display',sans-serif;color:#f59e0b;">
+          {{ avg_rating }}<span style="font-size:1rem;color:var(--muted);">/5</span>
+        </div>
+        <div class="text-muted small">Based on student ratings</div>
+      </div>
+
+      <!-- Category Breakdown -->
+      <div class="chart-card">
+        <div class="chart-card-title mb-3">📊 Categories</div>
+        {% for c in cat_stats %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span style="font-size:0.85rem;">{{ c.category|title }}</span>
+          <span class="badge" style="background:#ede9fe;color:#6366f1;">{{ c.cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
     </div>
-    {% if total_pages > 1 %}
-    <div class="card-footer border-0">
-      <nav>
-        <ul class="pagination pagination-sm justify-content-center mb-0">
-          {% for p in range(1, total_pages+1) %}
-          <li class="page-item {% if p==page %}active{% endif %}">
-            <a class="page-link" href="?page={{ p }}&status={{ status_filter }}&category={{ category_filter }}&priority={{ priority_filter }}&search={{ search }}">{{ p }}</a>
-          </li>
-          {% endfor %}
-        </ul>
-      </nav>
-    </div>
-    {% endif %}
   </div>
-  </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-function toggleAll(cb) {
-  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
-  updateBulkControls();
-}
-function updateBulkControls() {
-  const checked = document.querySelectorAll('.row-check:checked').length;
-  const controls = document.getElementById('bulkControls');
-  const count = document.getElementById('selectedCount');
-  if (checked > 0) {
-    controls.style.display = 'flex';
-    count.textContent = checked + ' selected';
-  } else {
-    controls.style.display = 'none!important';
-  }
-}
-function clearSelection() {
-  document.querySelectorAll('.row-check, #selectAll').forEach(c => c.checked = false);
-  document.getElementById('bulkControls').style.display = 'none!important';
-}
-</script>
-<script>
-const monthly = {{ monthly | tojson }};
-const months  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Monthly Chart
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 new Chart(document.getElementById('monthlyChart'), {
-  type:'bar',
-  data:{
-    labels:months,
-    datasets:[{label:'Submissions',data:monthly,backgroundColor:'rgba(99,102,241,0.2)',borderColor:'rgba(99,102,241,1)',borderWidth:2,borderRadius:6}]
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Suggestions',
+      data: {{ monthly|tojson }},
+      borderColor: '#6366f1',
+      backgroundColor: 'rgba(99,102,241,0.08)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#6366f1',
+      pointRadius: 4,
+      tension: 0.4,
+      fill: true
+    }]
   },
-  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
+      x: { grid: { display: false } }
+    }
+  }
 });
 
-const catStats = {{ cat_stats | tojson }};
-new Chart(document.getElementById('catChart'), {
-  type:'doughnut',
-  data:{
-    labels: catStats.map(c=>c.category),
-    datasets:[{data:catStats.map(c=>c.cnt),backgroundColor:['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899'],borderWidth:0}]
+// Category Doughnut
+const catData = {{ cat_stats|tojson }};
+new Chart(document.getElementById('categoryChart'), {
+  type: 'doughnut',
+  data: {
+    labels: catData.map(c => c.category),
+    datasets: [{
+      data: catData.map(c => c.cnt),
+      backgroundColor: ['#6366f1','#10b981','#f59e0b','#3b82f6','#ef4444','#ec4899','#8b5cf6'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
   },
-  options:{plugins:{legend:{position:'bottom'}},cutout:'60%'}
+  options: {
+    responsive: true,
+    cutout: '65%',
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } }
+  }
+});
+
+// Animate numbers
+document.querySelectorAll('.stat-card-number').forEach(el => {
+  const target = parseInt(el.textContent);
+  if (isNaN(target) || target === 0) return;
+  let current = 0;
+  const step  = Math.ceil(target / 30);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(timer);
+  }, 30);
 });
 </script>
-</body>f
+{% include '_darkmode.html' %}
+</body>
 </html>

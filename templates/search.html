@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Search — VoiceUp{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center mb-4">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary me-3">
+    <i class="fas fa-arrow-left me-1"></i>Back
+  </a>
+  <h4 class="fw-bold mb-0">🔍 Search Suggestions</h4>
+</div>
+
+<!-- Search Form -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+  <div class="card-body p-4">
+    <form method="GET" action="{{ url_for('search_suggestions') }}">
+      <div class="input-group">
+        <span class="input-group-text" style="border-radius:12px 0 0 12px;background:#f8faff;">
+          <i class="fas fa-search text-muted"></i>
+        </span>
+        <input type="text" name="q" value="{{ query }}"
+               class="form-control form-control-lg"
+               placeholder="Search by title, category, ID..."
+               style="border-left:0;"
+               autofocus>
+        <button type="submit" class="btn btn-primary px-4"
+                style="border-radius:0 12px 12px 0;">
+          Search
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results -->
+{% if query %}
+  <div class="mb-3">
+    <span class="text-muted">
+      Found <strong>{{ results|length }}</strong> result{{ 's' if results|length != 1 }} for
+      "<strong>{{ query }}</strong>"
+    </span>
+  </div>
+
+  {% if results %}
+    {% for s in results %}
+    <a href="{{ url_for('suggestion_detail', suggestion_id=s.suggestion_id) }}"
+       class="card border-0 shadow-sm mb-3 text-decoration-none"
+       style="border-radius:16px;transition:transform 0.2s;"
+       onmouseover="this.style.transform='translateY(-2px)'"
+       onmouseout="this.style.transform='translateY(0)'">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="fw-bold text-dark mb-1">{{ s.title }}</div>
+            <div class="text-muted small mb-2">
+              <span><i class="fas fa-tag me-1"></i>{{ s.category|title }}</span>
+              <span class="ms-3"><i class="fas fa-clock me-1"></i>{{ s.created_at.strftime('%b %d, %Y') if s.created_at else '' }}</span>
+              <span class="ms-3"><code>{{ s.suggestion_id }}</code></span>
+            </div>
+            <p class="text-muted small mb-0">
+              {{ s.description[:120] }}{% if s.description|length > 120 %}...{% endif %}
+            </p>
+          </div>
+          <div class="ms-3">
+            <span class="badge" style="
+              {% if s.status == 'pending' %}background:#fef3c7;color:#92400e;
+              {% elif s.status == 'under_review' %}background:#dbeafe;color:#1e40af;
+              {% elif s.status == 'resolved' %}background:#d1fae5;color:#065f46;
+              {% else %}background:#fee2e2;color:#991b1b;{% endif %}
+              padding:6px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;">
+              {{ s.status|replace('_',' ')|title }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
+      <p>No suggestions found for "<strong>{{ query }}</strong>"</p>
+      <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary" style="border-radius:10px;">
+        Submit New Suggestion
+      </a>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
+    <p>Enter a keyword to search your suggestions</p>
+  </div>
+{% endif %}
+
+{% include '_darkmode.html' %}
+{% endblock %}

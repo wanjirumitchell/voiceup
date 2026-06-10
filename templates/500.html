@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 — Server Error | VoiceUp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@700&family=Cabinet+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fff5f5, #faf0ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      text-align: center;
+      padding: 24px;
+    }
+    .error-box { max-width: 480px; }
+    .error-emoji { font-size: 5rem; margin-bottom: 16px; animation: shake 0.5s infinite; }
+    @keyframes shake {
+      0%,100% { transform: rotate(0); }
+      25%      { transform: rotate(-5deg); }
+      75%      { transform: rotate(5deg); }
+    }
+    .error-code {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 6rem;
+      font-weight: 700;
+      color: #ef4444;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .error-title {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .error-desc { color: #64748b; margin-bottom: 32px; font-size: 1rem; }
+    .btn-home {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-family: 'Clash Display', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+      transition: transform 0.2s;
+    }
+    .btn-home:hover { transform: translateY(-2px); color: #fff; }
+    .btn-back {
+      color: #ef4444;
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-box">
+    <div class="error-emoji">⚙️</div>
+    <div class="error-code">500</div>
+    <div class="error-title">Server Error</div>
+    <p class="error-desc">Something went wrong on our end. We're working on fixing it. Please try again shortly.</p>
+    <a href="/" class="btn-home"><i class="fas fa-home"></i> Go Home</a>
+    <a href="javascript:history.back()" class="btn-back">← Go Back</a>
+  </div>
+</body>
+</html>
