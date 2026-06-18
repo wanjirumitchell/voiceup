@@ -1,92 +1,208 @@
 {% extends 'base.html' %}
-{% block title %}My Profile{% endblock %}
+{% block title %}My Profile — VoiceUp{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-8">
-    <h2 class="fw-bold mb-4"><i class="fas fa-user-circle me-2 text-primary"></i>My Profile</h2>
-    <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card shadow-sm text-center p-4">
-          {% if user.profile_photo %}
-          <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}"
-               class="rounded-circle mx-auto d-block mb-3" width="100" height="100" style="object-fit:cover">
-          {% else %}
-          <div class="profile-avatar mx-auto mb-3">{{ user.fullname[0]|upper }}</div>
-          {% endif %}
-          <h5 class="fw-bold mb-1">{{ user.fullname }}</h5>
-          <span class="badge bg-primary mb-2">{{ user.role|title }}</span>
-          {% if user.student_id %}<p class="text-muted small mb-1"><i class="fas fa-id-card me-1"></i>{{ user.student_id }}</p>{% endif %}
-          {% if user.department %}<p class="text-muted small mb-1"><i class="fas fa-building me-1"></i>{{ user.department }}</p>{% endif %}
-          <div class="mt-3 pt-3 border-top row g-2 text-center">
-            <div class="col-4"><div class="fw-bold text-primary">{{ stats.total or 0 }}</div><div class="text-muted" style="font-size:.7rem">Total</div></div>
-            <div class="col-4"><div class="fw-bold text-success">{{ stats.resolved or 0 }}</div><div class="text-muted" style="font-size:.7rem">Resolved</div></div>
-            <div class="col-4"><div class="fw-bold text-warning">{{ stats.pending or 0 }}</div><div class="text-muted" style="font-size:.7rem">Pending</div></div>
-          </div>
-        </div>
+
+<!-- Profile Header -->
+<div class="profile-hero mb-4">
+  <div class="profile-cover"></div>
+  <div class="profile-info">
+    <div class="profile-avatar-wrap">
+      {% if user.profile_photo %}
+      <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}"
+           class="profile-avatar-img" alt="Profile">
+      {% else %}
+      <div class="profile-avatar-big">{{ user.fullname[0]|upper }}</div>
+      {% endif %}
+    </div>
+    <div class="profile-details">
+      <h3 class="profile-name">{{ user.fullname }}</h3>
+      <div class="profile-meta">
+        <span><i class="fas fa-user-tag me-1"></i>{{ user.role|title }}</span>
+        {% if user.department %}<span><i class="fas fa-building me-1"></i>{{ user.department }}</span>{% endif %}
+        {% if user.student_id %}<span><i class="fas fa-id-card me-1"></i>{{ user.student_id }}</span>{% endif %}
+        <span><i class="fas fa-calendar me-1"></i>Joined {{ user.created_at.strftime('%B %Y') if user.created_at else '' }}</span>
       </div>
-      <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-          <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-edit me-2"></i>Edit Profile</h6></div>
-          <div class="card-body p-4">
-            <form method="POST" enctype="multipart/form-data">
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Profile Photo</label>
-                <input type="file" name="profile_photo" class="form-control" accept="image/*">
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Full Name</label>
-                <input type="text" name="fullname" class="form-control" value="{{ user.fullname }}" required>
-              </div>
-              <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Student ID</label>
-                  <input type="text" name="student_id" class="form-control" value="{{ user.student_id or '' }}" placeholder="e.g. STD/2024/001">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Phone Number</label>
-                  <input type="text" name="phone" class="form-control" value="{{ user.phone or '' }}" placeholder="e.g. 0712345678">
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Department / Class</label>
-                <input type="text" name="department" class="form-control" value="{{ user.department or '' }}" placeholder="e.g. Computer Science Year 2">
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Bio</label>
-                <textarea name="bio" class="form-control" rows="2" placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
-              </div>
-              <div class="mb-4">
-                <label class="form-label fw-semibold">Email</label>
-                <input type="email" class="form-control" value="{{ user.email }}" disabled>
-              </div>
-              <button type="submit" class="btn btn-primary px-5"><i class="fas fa-save me-2"></i>Save Changes</button>
-            </form>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-4">
+    <div class="profile-stat-card">
+      <div class="profile-stat-num">{{ stats.total or 0 }}</div>
+      <div class="profile-stat-label">Total Ideas</div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="profile-stat-card">
+      <div class="profile-stat-num text-success">{{ stats.resolved or 0 }}</div>
+      <div class="profile-stat-label">Resolved</div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="profile-stat-card">
+      <div class="profile-stat-num text-warning">{{ stats.pending or 0 }}</div>
+      <div class="profile-stat-label">Pending</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Edit Profile -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm" style="border-radius:20px;">
+      <div class="card-header border-0 pt-4 px-4">
+        <h6 class="fw-bold mb-0"><i class="fas fa-user-edit me-2 text-primary"></i>Edit Profile</h6>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="fullname" class="form-control"
+                   value="{{ user.fullname }}" style="border-radius:10px;" required>
           </div>
-        </div>
-        <div class="card shadow-sm">
-          <div class="card-header border-0 pt-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-lock me-2"></i>Change Password</h6></div>
-          <div class="card-body p-4">
-            <form method="POST" action="{{ url_for('change_password') }}">
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold">Current</label>
-                  <input type="password" name="current_password" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold">New</label>
-                  <input type="password" name="new_password" class="form-control form-control-sm" required minlength="8">
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold">Confirm</label>
-                  <input type="password" name="confirm_password" class="form-control form-control-sm" required>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-warning btn-sm mt-3"><i class="fas fa-key me-2"></i>Update Password</button>
-            </form>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Student ID</label>
+            <input type="text" name="student_id" class="form-control"
+                   value="{{ user.student_id or '' }}" style="border-radius:10px;"
+                   placeholder="e.g. SCT221-0001/2023">
           </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone</label>
+            <input type="text" name="phone" class="form-control"
+                   value="{{ user.phone or '' }}" style="border-radius:10px;"
+                   placeholder="+254 700 000 000">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Department</label>
+            <input type="text" name="department" class="form-control"
+                   value="{{ user.department or '' }}" style="border-radius:10px;"
+                   placeholder="e.g. Computer Science">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Bio</label>
+            <textarea name="bio" class="form-control" rows="3"
+                      style="border-radius:10px;"
+                      placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Profile Photo</label>
+            <input type="file" name="profile_photo" class="form-control"
+                   accept="image/*" style="border-radius:10px;">
+          </div>
+          <button type="submit" class="btn btn-primary w-100" style="border-radius:10px;">
+            <i class="fas fa-save me-2"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:20px;">
+      <div class="card-header border-0 pt-4 px-4">
+        <h6 class="fw-bold mb-0"><i class="fas fa-lock me-2 text-warning"></i>Change Password</h6>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('change_password') }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Current Password</label>
+            <input type="password" name="current_password" class="form-control"
+                   style="border-radius:10px;" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">New Password</label>
+            <input type="password" name="new_password" class="form-control"
+                   style="border-radius:10px;" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Confirm Password</label>
+            <input type="password" name="confirm_password" class="form-control"
+                   style="border-radius:10px;" required>
+          </div>
+          <button type="submit" class="btn btn-warning w-100" style="border-radius:10px;">
+            <i class="fas fa-key me-2"></i>Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card border-0 shadow-sm" style="border-radius:20px;">
+      <div class="card-header border-0 pt-4 px-4">
+        <h6 class="fw-bold mb-0"><i class="fas fa-bolt me-2 text-info"></i>Quick Links</h6>
+      </div>
+      <div class="card-body p-4">
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('my_suggestions') }}" class="btn btn-outline-primary" style="border-radius:10px;">
+            <i class="fas fa-lightbulb me-2"></i>My Suggestions
+          </a>
+          <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-warning" style="border-radius:10px;">
+            <i class="fas fa-trophy me-2"></i>Leaderboard
+          </a>
+          <a href="{{ url_for('notifications') }}" class="btn btn-outline-info" style="border-radius:10px;">
+            <i class="fas fa-bell me-2"></i>Notifications
+          </a>
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-danger" style="border-radius:10px;">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+          </a>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+.profile-hero {
+  background: #fff; border-radius: 20px;
+  border: 1px solid #e2e8f0; overflow: hidden;
+}
+.profile-cover {
+  height: 120px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+}
+.profile-info {
+  display: flex; align-items: flex-end; gap: 20px;
+  padding: 0 24px 24px; margin-top: -40px;
+}
+.profile-avatar-wrap {
+  flex-shrink: 0;
+}
+.profile-avatar-img {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 4px solid #fff; object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.profile-avatar-big {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font-weight: 800; font-size: 2rem;
+  display: flex; align-items: center; justify-content: center;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.profile-name {
+  font-weight: 700; font-size: 1.3rem;
+  color: #1e293b; margin-bottom: 4px;
+}
+.profile-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 0.82rem; color: #64748b;
+}
+.profile-stat-card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 16px; padding: 20px;
+  text-align: center;
+}
+.profile-stat-num {
+  font-size: 2rem; font-weight: 800;
+  color: #6366f1; line-height: 1;
+  margin-bottom: 4px;
+}
+.profile-stat-label { color: #64748b; font-size: 0.82rem; }
+</style>
+
+{% include '_darkmode.html' %}
 {% endblock %}

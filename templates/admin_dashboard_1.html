@@ -102,11 +102,6 @@
       display: flex; align-items: center; justify-content: center;
       padding: 0 4px; border: 2px solid #1e1b4b;
     }
-    .admin-bell-badge.is-urgent { animation: urgent-badge-pulse 1.2s ease-in-out infinite; }
-    @keyframes urgent-badge-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-      50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
-    }
     .admin-bell-dropdown {
       position: absolute; top: 48px; right: 0;
       width: 320px; background: #fff; border-radius: 14px;
@@ -128,21 +123,8 @@
       padding: 12px 16px; border-bottom: 1px solid #f8fafc;
       text-decoration: none; color: #1e293b; display: block;
       transition: background 0.15s;
-      border-left: 3px solid transparent;
     }
     .admin-bell-item:hover { background: #f8fafc; }
-    .admin-bell-item.is-urgent {
-      background: #fef2f2; border-left-color: #ef4444;
-    }
-    .admin-bell-item .item-tags { display: flex; gap: 4px; margin-bottom: 3px; }
-    .admin-bell-item .tag-urgent {
-      background: #ef4444; color: #fff; font-size: 0.62rem; font-weight: 700;
-      padding: 1px 6px; border-radius: 8px; letter-spacing: 0.3px;
-    }
-    .admin-bell-item .tag-dup {
-      background: #f59e0b; color: #fff; font-size: 0.62rem; font-weight: 700;
-      padding: 1px 6px; border-radius: 8px;
-    }
     .admin-bell-item .item-title {
       font-weight: 600; font-size: 0.83rem; margin-bottom: 2px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -511,12 +493,6 @@
           <div class="flex-grow-1">
             <div class="fw-semibold" style="font-size:0.9rem;">
               {{ s.title[:55] }}{% if s.title|length > 55 %}...{% endif %}
-              {% if s.priority == 'urgent' %}
-              <span class="badge bg-danger ms-1" style="font-size:0.62rem;">🚨 AI: URGENT</span>
-              {% endif %}
-              {% if s.possible_duplicate_id %}
-              <span class="badge bg-warning text-dark ms-1" style="font-size:0.62rem;">🔁 {{ s.duplicate_similarity }}% match</span>
-              {% endif %}
             </div>
             <div class="text-muted" style="font-size:0.75rem;">
               <span><i class="fas fa-user me-1"></i>{{ s.fullname }}</span>
@@ -742,16 +718,10 @@ async function fetchAdminBell() {
       badge.style.display = 'none';
       btn.classList.remove('has-new');
     }
-    badge.classList.toggle('is-urgent', data.urgent_count > 0);
 
     if (data.recent && data.recent.length > 0) {
       list.innerHTML = data.recent.map(s => `
-        <a href="/admin/suggestion/${s.id}" class="admin-bell-item ${s.priority === 'urgent' ? 'is-urgent' : ''}">
-          ${(s.priority === 'urgent' || s.is_duplicate) ? `
-          <div class="item-tags">
-            ${s.priority === 'urgent' ? '<span class="tag-urgent">🚨 URGENT</span>' : ''}
-            ${s.is_duplicate ? `<span class="tag-dup">🔁 ${s.duplicate_similarity}% MATCH</span>` : ''}
-          </div>` : ''}
+        <a href="/admin/suggestion/${s.id}" class="admin-bell-item">
           <div class="item-title">${CAT_ICONS[s.category] || '📌'} ${escapeHtml(s.title)}</div>
           <div class="item-meta">
             <span>${escapeHtml(s.fullname)} · ${s.suggestion_id}</span>

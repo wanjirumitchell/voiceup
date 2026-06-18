@@ -1,50 +1,121 @@
 {% extends 'base.html' %}
-{% block title %}Notifications{% endblock %}
+{% block title %}Notifications — VoiceUp{% endblock %}
 {% block content %}
 
 <div class="d-flex align-items-center justify-content-between mb-4">
-  <h2 class="fw-bold mb-0"><i class="fas fa-bell me-2 text-primary"></i>Notifications</h2>
+  <div class="d-flex align-items-center gap-3">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:10px;">
+      <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+    <h4 class="fw-bold mb-0">🔔 Notifications</h4>
+  </div>
   {% if notifications %}
-  <button class="btn btn-outline-secondary btn-sm" onclick="markAllRead()">
-    <i class="fas fa-check-double me-1"></i>Mark All Read
-  </button>
+  <form method="POST" action="{{ url_for('mark_notifications_read') }}">
+    <button type="submit" class="btn btn-sm btn-outline-primary" style="border-radius:10px;">
+      <i class="fas fa-check-double me-1"></i>Mark all read
+    </button>
+  </form>
   {% endif %}
 </div>
 
-{% if notifications %}
-<div class="card shadow-sm">
-  {% for n in notifications %}
-  <div class="d-flex align-items-start p-3 border-bottom {% if not n.is_read %}notif-unread{% endif %}">
-    <div class="notif-icon me-3">
-      <i class="fas fa-bell"></i>
-    </div>
-    <div class="flex-grow-1">
-      <div class="fw-semibold">{{ n.title }}</div>
-      <div class="text-muted small">{{ n.message }}</div>
+<div style="max-width:700px;">
+  {% if notifications %}
+    {% for n in notifications %}
+    <div class="notif-card {% if not n.is_read %}unread{% endif %}">
+      <div class="notif-icon">
+        {% if 'resolved' in n.title|lower %}🎉
+        {% elif 'response' in n.title|lower %}💬
+        {% elif 'review' in n.title|lower %}🔍
+        {% elif 'rejected' in n.title|lower %}❌
+        {% elif 'comment' in n.title|lower %}💭
+        {% else %}📬{% endif %}
+      </div>
+      <div class="flex-grow-1">
+        <div class="notif-title">{{ n.title }}</div>
+        <div class="notif-message">{{ n.message }}</div>
+        <div class="notif-time">
+          <i class="fas fa-clock me-1"></i>
+          {{ n.created_at.strftime('%B %d, %Y at %H:%M') if n.created_at else '' }}
+        </div>
+      </div>
+      {% if not n.is_read %}
+      <div class="notif-dot"></div>
+      {% endif %}
       {% if n.link %}
-      <a href="{{ n.link }}" class="btn btn-sm btn-outline-primary mt-1">View</a>
+      <a href="{{ n.link }}" class="notif-action">
+        <i class="fas fa-arrow-right"></i>
+      </a>
       {% endif %}
     </div>
-    <small class="text-muted ms-3 text-nowrap">
-      {{ n.created_at.strftime('%b %d, %H:%M') if n.created_at else '' }}
-    </small>
-  </div>
-  {% endfor %}
+    {% endfor %}
+  {% else %}
+    <div class="text-center py-5">
+      <div style="font-size:4rem;margin-bottom:16px;">🔔</div>
+      <h5 class="fw-bold text-muted">No notifications yet</h5>
+      <p class="text-muted">You'll be notified when admins respond to your suggestions.</p>
+      <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary mt-2" style="border-radius:10px;">
+        <i class="fas fa-plus me-2"></i>Submit a Suggestion
+      </a>
+    </div>
+  {% endif %}
 </div>
-{% else %}
-<div class="empty-state text-center py-5">
-  <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-  <h5>No notifications yet</h5>
-  <p class="text-muted">You'll be notified when admins respond to your suggestions.</p>
-</div>
-{% endif %}
 
-{% endblock %}
-{% block extra_js %}
-<script>
-function markAllRead() {
-  fetch('/notifications/read', {method:'POST'})
-    .then(() => location.reload());
+<style>
+.notif-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
 }
-</script>
+.notif-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+.notif-card.unread {
+  background: #f5f3ff;
+  border-color: #c4b5fd;
+}
+.notif-icon {
+  font-size: 1.8rem;
+  width: 48px; height: 48px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.notif-card.unread .notif-icon { background: #ede9fe; }
+.notif-title {
+  font-weight: 700; font-size: 0.95rem;
+  color: #1e293b; margin-bottom: 4px;
+}
+.notif-message {
+  font-size: 0.85rem; color: #475569;
+  margin-bottom: 8px; line-height: 1.5;
+}
+.notif-time {
+  font-size: 0.75rem; color: #94a3b8;
+}
+.notif-dot {
+  width: 10px; height: 10px;
+  background: #6366f1; border-radius: 50%;
+  position: absolute; top: 16px; right: 16px;
+  flex-shrink: 0;
+}
+.notif-action {
+  color: #6366f1; text-decoration: none;
+  width: 32px; height: 32px;
+  background: #ede9fe; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.2s;
+}
+.notif-action:hover { background: #6366f1; color: #fff; }
+</style>
+
+{% include '_darkmode.html' %}
 {% endblock %}

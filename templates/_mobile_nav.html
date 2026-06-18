@@ -1,0 +1,220 @@
+{# ═══════════════════════════════════════════════════════════════════
+   VOICEUP MOBILE NAVIGATION
+   Save as: templates/_mobile_nav.html
+   Include at the bottom of every student template with:
+   {% include '_mobile_nav.html' %}
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-nav d-md-none">
+  <a href="{{ url_for('dashboard') }}" class="mobile-nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+    <i class="fas fa-home"></i>
+    <span>Home</span>
+  </a>
+  <a href="{{ url_for('my_suggestions') }}" class="mobile-nav-item {% if request.endpoint == 'my_suggestions' %}active{% endif %}">
+    <i class="fas fa-lightbulb"></i>
+    <span>My Ideas</span>
+  </a>
+  <a href="{{ url_for('submit_suggestion') }}" class="mobile-nav-fab">
+    <i class="fas fa-plus"></i>
+  </a>
+  <a href="{{ url_for('public_board') }}" class="mobile-nav-item {% if request.endpoint == 'public_board' %}active{% endif %}">
+    <i class="fas fa-globe"></i>
+    <span>Board</span>
+  </a>
+  <a href="{{ url_for('profile') }}" class="mobile-nav-item {% if request.endpoint == 'profile' %}active{% endif %}">
+    <i class="fas fa-user"></i>
+    <span>Profile</span>
+  </a>
+</nav>
+
+<!-- Mobile Top Bar (for pages without navbar) -->
+<style>
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 1000;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 4px 16px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  min-width: 56px;
+}
+.mobile-nav-item i {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+.mobile-nav-item.active {
+  color: #6366f1;
+}
+.mobile-nav-item.active i {
+  transform: scale(1.15);
+}
+.mobile-nav-item:hover {
+  color: #6366f1;
+}
+
+/* ── FAB BUTTON ── */
+.mobile-nav-fab {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.3rem;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: -20px;
+}
+.mobile-nav-fab:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99,102,241,0.5);
+  color: white;
+}
+
+/* ── ADD BOTTOM PADDING ON MOBILE ── */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 80px !important;
+  }
+
+  /* Make navbar smaller on mobile */
+  .navbar-voiceup {
+    padding: 10px 16px !important;
+  }
+
+  /* Make cards full width on mobile */
+  .container-fluid {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Better touch targets */
+  .btn {
+    min-height: 44px;
+  }
+
+  /* Stack cards on mobile */
+  .row.g-4 > .col-md-8,
+  .row.g-4 > .col-md-4 {
+    width: 100%;
+  }
+
+  /* Hide desktop nav links on mobile */
+  .dash-nav-links .dash-nav-link:not(:last-child):not(.notif-link) {
+    display: none;
+  }
+
+  /* Better form inputs on mobile */
+  .form-control, .form-select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Welcome hero on mobile */
+  .welcome-hero {
+    padding: 24px 20px !important;
+  }
+  .welcome-hero h2 {
+    font-size: 1.5rem !important;
+  }
+  .hero-emoji {
+    font-size: 3rem !important;
+    right: 16px !important;
+    opacity: 0.5 !important;
+  }
+
+  /* Stat cards on mobile */
+  .stat-number {
+    font-size: 1.8rem !important;
+  }
+}
+
+/* ── MOBILE HAMBURGER MENU ── */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: #6366f1;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+  .dash-nav-links {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 16px;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .dash-nav-links.open {
+    display: flex !important;
+  }
+  .dash-nav-link {
+    padding: 12px 16px !important;
+    border-radius: 10px;
+    width: 100%;
+  }
+}
+</style>
+
+<script>
+// Mobile menu toggle
+function toggleMobileMenu() {
+  const links = document.querySelector('.dash-nav-links');
+  if (links) links.classList.toggle('open');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+  const links = document.querySelector('.dash-nav-links');
+  const btn   = document.querySelector('.mobile-menu-btn');
+  if (links && btn && !links.contains(e.target) && !btn.contains(e.target)) {
+    links.classList.remove('open');
+  }
+});
+
+// Add hamburger button to navbar if it exists
+document.addEventListener('DOMContentLoaded', function() {
+  const nav = document.querySelector('.dash-nav');
+  if (nav && window.innerWidth < 768) {
+    const btn = document.createElement('button');
+    btn.className = 'mobile-menu-btn';
+    btn.innerHTML = '<i class="fas fa-bars"></i>';
+    btn.onclick = toggleMobileMenu;
+    nav.appendChild(btn);
+  }
+});
+</script>

@@ -1,115 +1,179 @@
 {% extends 'base.html' %}
-{% block title %}Public Board{% endblock %}
+{% block title %}Public Board — VoiceUp{% endblock %}
 {% block content %}
 
-<div class="d-flex align-items-center justify-content-between mb-4">
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
   <div>
-    <h2 class="fw-bold mb-1"><i class="fas fa-globe me-2 text-primary"></i>Public Board</h2>
-    <p class="text-muted mb-0">Browse and upvote suggestions from the community</p>
+    <h4 class="fw-bold mb-1">🌐 Public Board</h4>
+    <p class="text-muted mb-0 small">See what students are saying and vote on ideas you support</p>
+  </div>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary" style="border-radius:12px;">
+    <i class="fas fa-plus me-2"></i>Share Your Idea
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar mb-4">
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <!-- Sort -->
+    <div class="filter-group">
+      <a href="?sort=votes&category={{ category }}" class="filter-btn {% if sort=='votes' %}active{% endif %}">
+        <i class="fas fa-fire me-1"></i>Top Voted
+      </a>
+      <a href="?sort=recent&category={{ category }}" class="filter-btn {% if sort=='recent' %}active{% endif %}">
+        <i class="fas fa-clock me-1"></i>Recent
+      </a>
+    </div>
+
+    <!-- Categories -->
+    <div class="filter-group ms-auto flex-wrap d-flex gap-1">
+      {% for cat in ['all','academics','facilities','welfare','technology','administration','sports'] %}
+      <a href="?category={{ cat }}&sort={{ sort }}"
+         class="filter-chip {% if category==cat %}active{% endif %}">
+        {{ cat|title }}
+      </a>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-    <form method="GET" class="row g-2 align-items-end">
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">Category</label>
-        <select name="category" class="form-select form-select-sm">
-          <option value="all" {% if category=='all' %}selected{% endif %}>All Categories</option>
-          {% for cat in ['academics','facilities','welfare','technology','administration','sports','other'] %}
-          <option value="{{ cat }}" {% if category==cat %}selected{% endif %}>{{ cat|title }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">Sort By</label>
-        <select name="sort" class="form-select form-select-sm">
-          <option value="votes" {% if sort=='votes' %}selected{% endif %}>Most Votes</option>
-          <option value="recent" {% if sort=='recent' %}selected{% endif %}>Most Recent</option>
-        </select>
-      </div>
-      <div class="col-md-4">
-        <button class="btn btn-primary btn-sm w-100"><i class="fas fa-filter me-1"></i>Filter</button>
-      </div>
-    </form>
-  </div>
-</div>
-
+<!-- Suggestions Grid -->
 {% if suggestions %}
-<div class="row g-4">
+<div class="row g-4 mb-4">
   {% for s in suggestions %}
   <div class="col-md-4">
-    <div class="card h-100 shadow-sm suggestion-card">
-      <div class="card-body d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="badge badge-category">{{ s.category|title }}</span>
-          <span class="badge badge-priority-{{ s.priority }}">{{ s.priority|title }}</span>
+    <div class="pub-card">
+      <!-- Category & Priority -->
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <span class="pub-category">{{ s.category|title }}</span>
+        <span class="pub-status s-{{ s.status }}">{{ s.status|replace('_',' ')|title }}</span>
+      </div>
+
+      <!-- Title -->
+      <h6 class="pub-title">{{ s.title[:80] }}{% if s.title|length > 80 %}...{% endif %}</h6>
+
+      <!-- Description -->
+      <p class="pub-desc">{{ s.description[:120] }}{% if s.description|length > 120 %}...{% endif %}</p>
+
+      <!-- Footer -->
+      <div class="pub-footer">
+        <div class="pub-author">
+          <div class="pub-avatar">{{ s.fullname[0]|upper if not s.is_anonymous else '?' }}</div>
+          <span>{{ s.fullname if not s.is_anonymous else 'Anonymous' }}</span>
+          <span class="text-muted">· {{ s.created_at.strftime('%b %d') if s.created_at else '' }}</span>
         </div>
-        <h6 class="fw-bold mb-2">{{ s.title }}</h6>
-        <p class="text-muted small flex-grow-1">{{ s.description[:120] }}{% if s.description|length > 120 %}...{% endif %}</p>
-        <div class="d-flex align-items-center justify-content-between mt-3">
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-secondary-subtle text-secondary">
-              <i class="fas fa-clock me-1"></i>{{ s.status|replace('_',' ')|title }}
-            </span>
-          </div>
-          {% if session.get('user_id') %}
-          <button class="btn btn-vote {% if s.id in user_votes %}voted{% endif %}"
-                  data-id="{{ s.id }}" onclick="toggleVote(this, {{ s.id }})">
-            <i class="fas fa-thumbs-up me-1"></i>
-            <span class="vote-count">{{ s.vote_count }}</span>
-          </button>
-          {% else %}
-          <a href="{{ url_for('user_login') }}" class="btn btn-vote">
-            <i class="fas fa-thumbs-up me-1"></i>{{ s.vote_count }}
-          </a>
-          {% endif %}
+
+        {% if 'user_id' in session %}
+        <button class="vote-btn {% if s.id in user_votes %}voted{% endif %}"
+                onclick="vote({{ s.id }}, this)">
+          <i class="fas fa-thumbs-up"></i>
+          <span class="vote-count">{{ s.vote_count }}</span>
+        </button>
+        {% else %}
+        <div class="vote-display">
+          <i class="fas fa-thumbs-up"></i> {{ s.vote_count }}
         </div>
-        <div class="mt-2 pt-2 border-top">
-          <small class="text-muted">
-            <i class="fas fa-user me-1"></i>{{ s.fullname }} &bull;
-            <i class="fas fa-calendar me-1"></i>{{ s.created_at.strftime('%b %d, %Y') if s.created_at else '' }}
-          </small>
-        </div>
+        {% endif %}
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
-
-{% if total_pages > 1 %}
-<nav class="mt-4">
-  <ul class="pagination justify-content-center">
-    {% for p in range(1, total_pages+1) %}
-    <li class="page-item {% if p==page %}active{% endif %}">
-      <a class="page-link" href="?page={{ p }}&category={{ category }}&sort={{ sort }}">{{ p }}</a>
-    </li>
-    {% endfor %}
-  </ul>
-</nav>
+{% else %}
+<div class="text-center py-5">
+  <div style="font-size:4rem;margin-bottom:16px;">📭</div>
+  <h5 class="fw-bold text-muted">No suggestions yet</h5>
+  <p class="text-muted">Be the first to share an idea!</p>
+  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary" style="border-radius:10px;">
+    Submit First Suggestion
+  </a>
+</div>
 {% endif %}
 
-{% else %}
-<div class="empty-state text-center py-5">
-  <i class="fas fa-globe fa-3x text-muted mb-3"></i>
-  <h5>No public suggestions yet</h5>
-  <p class="text-muted">Be the first to submit a suggestion!</p>
-  {% if session.get('user_id') %}
-  <a href="{{ url_for('submit_suggestion') }}" class="btn btn-primary">Submit Now</a>
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="d-flex justify-content-center gap-2">
+  {% if page > 1 %}
+  <a href="?page={{ page-1 }}&sort={{ sort }}&category={{ category }}"
+     class="btn btn-outline-primary" style="border-radius:10px;">
+    <i class="fas fa-chevron-left"></i>
+  </a>
+  {% endif %}
+  <span class="btn btn-primary" style="border-radius:10px;">{{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="?page={{ page+1 }}&sort={{ sort }}&category={{ category }}"
+     class="btn btn-outline-primary" style="border-radius:10px;">
+    <i class="fas fa-chevron-right"></i>
+  </a>
   {% endif %}
 </div>
 {% endif %}
-{% endblock %}
 
-{% block extra_js %}
+<style>
+.filters-bar { background:#fff;border-radius:16px;padding:16px 20px;border:1px solid #e2e8f0; }
+.filter-group { display:flex;gap:4px; }
+.filter-btn {
+  padding:6px 14px;border-radius:20px;font-size:0.82rem;font-weight:600;
+  border:1px solid #e2e8f0;background:#fff;color:#64748b;text-decoration:none;transition:all 0.15s;
+}
+.filter-btn.active,.filter-btn:hover { background:#6366f1;border-color:#6366f1;color:#fff; }
+.filter-chip {
+  padding:4px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;
+  border:1px solid #e2e8f0;background:#fff;color:#64748b;text-decoration:none;transition:all 0.15s;
+}
+.filter-chip.active,.filter-chip:hover { background:#ede9fe;border-color:#6366f1;color:#6366f1; }
+
+.pub-card {
+  background:#fff;border:1px solid #e2e8f0;border-radius:20px;
+  padding:24px;height:100%;transition:transform 0.2s,box-shadow 0.2s;
+  display:flex;flex-direction:column;
+}
+.pub-card:hover { transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.08); }
+
+.pub-category {
+  background:#ede9fe;color:#6366f1;padding:3px 10px;
+  border-radius:20px;font-size:0.72rem;font-weight:600;
+}
+.pub-status { font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:20px; }
+.s-pending { background:#fef3c7;color:#92400e; }
+.s-under_review { background:#dbeafe;color:#1e40af; }
+.s-resolved { background:#d1fae5;color:#065f46; }
+.s-rejected { background:#fee2e2;color:#991b1b; }
+
+.pub-title { font-weight:700;font-size:0.95rem;color:#1e293b;margin-bottom:8px;line-height:1.4; }
+.pub-desc { color:#64748b;font-size:0.83rem;line-height:1.6;flex-grow:1;margin-bottom:16px; }
+
+.pub-footer { display:flex;align-items:center;justify-content:space-between;padding-top:16px;border-top:1px solid #f1f5f9; }
+.pub-author { display:flex;align-items:center;gap:8px;font-size:0.78rem;color:#64748b; }
+.pub-avatar {
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;font-weight:700;font-size:0.75rem;
+  display:flex;align-items:center;justify-content:center;
+}
+.vote-btn {
+  display:flex;align-items:center;gap:6px;
+  background:#f1f5f9;border:1px solid #e2e8f0;
+  border-radius:20px;padding:5px 14px;
+  font-size:0.82rem;font-weight:600;color:#475569;
+  cursor:pointer;transition:all 0.2s;
+}
+.vote-btn:hover { background:#ede9fe;border-color:#6366f1;color:#6366f1; }
+.vote-btn.voted { background:#ede9fe;border-color:#6366f1;color:#6366f1; }
+.vote-display { color:#94a3b8;font-size:0.82rem; }
+</style>
+
 <script>
-function toggleVote(btn, sid) {
-  fetch(`/vote/${sid}`, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
-    .then(r => r.json())
-    .then(data => {
-      btn.querySelector('.vote-count').textContent = data.count;
-      btn.classList.toggle('voted', data.voted);
-    });
+async function vote(sid, btn) {
+  try {
+    const res  = await fetch(`/vote/${sid}`, {method:'POST'});
+    const data = await res.json();
+    btn.querySelector('.vote-count').textContent = data.count;
+    btn.classList.toggle('voted', data.voted);
+  } catch(e) {}
 }
 </script>
+
+{% include '_darkmode.html' %}
 {% endblock %}
