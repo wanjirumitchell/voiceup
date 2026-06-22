@@ -4,6 +4,44 @@
 
 <div class="row justify-content-center">
   <div class="col-lg-8">
+
+    <!-- ── VOICE INPUT CARD ── -->
+    <div class="voice-card mb-4" id="voiceCard">
+      <div class="voice-card-inner">
+        <div class="voice-icon-wrap">
+          <button type="button" id="voiceBtn" onclick="toggleVoice()"
+                  class="voice-btn" title="Speak your suggestion">
+            <i class="fas fa-microphone" id="voiceIcon"></i>
+          </button>
+          <div class="voice-rings" id="voiceRings" style="display:none;">
+            <div class="ring ring1"></div>
+            <div class="ring ring2"></div>
+            <div class="ring ring3"></div>
+          </div>
+        </div>
+        <div class="voice-info">
+          <div class="voice-title">🎤 Speak Your Suggestion</div>
+          <div class="voice-subtitle" id="voiceStatus">
+            Click the mic and speak — VoiceUp will fill the form for you
+          </div>
+          <div class="voice-transcript" id="voiceTranscript" style="display:none;"></div>
+        </div>
+        <div class="voice-lang">
+          <select id="voiceLang" class="form-select form-select-sm"
+                  style="width:auto;border-radius:8px;font-size:0.75rem;">
+            <option value="en-US">🇺🇸 English</option>
+            <option value="sw-KE">🇰🇪 Swahili</option>
+            <option value="en-KE">🇰🇪 English (Kenya)</option>
+          </select>
+        </div>
+      </div>
+      <div class="voice-help">
+        <i class="fas fa-lightbulb me-1 text-warning"></i>
+        <strong>Tip:</strong> Say your title first, pause, then describe in detail.
+        Works best on Chrome or Edge.
+      </div>
+    </div>
+
     <div class="card shadow-sm">
       <div class="card-header border-0 pt-4 px-4">
         <h4 class="fw-bold mb-1"><i class="fas fa-paper-plane me-2 text-primary"></i>Submit a Suggestion</h4>
@@ -23,12 +61,20 @@
             {% endfor %}
           </select>
         </div>
+
         <form method="POST" enctype="multipart/form-data">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
-            <input type="text" name="title" class="form-control" placeholder="Brief title for your suggestion"
+            <label class="form-label fw-semibold d-flex align-items-center justify-content-between">
+              <span>Title <span class="text-danger">*</span></span>
+              <button type="button" class="mic-field-btn" onclick="voiceField('title')">
+                <i class="fas fa-microphone-alt"></i> Speak title
+              </button>
+            </label>
+            <input type="text" name="title" id="titleInput" class="form-control"
+                   placeholder="Brief title for your suggestion"
                    value="{{ title|default('') }}" required minlength="5">
           </div>
+
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
@@ -49,21 +95,28 @@
               <div class="form-text">Sets the response deadline for admins</div>
             </div>
           </div>
+
           <div class="mb-3">
-            <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
-            <textarea name="description" class="form-control" rows="5"
+            <label class="form-label fw-semibold d-flex align-items-center justify-content-between">
+              <span>Description <span class="text-danger">*</span></span>
+              <button type="button" class="mic-field-btn" onclick="voiceField('description')">
+                <i class="fas fa-microphone-alt"></i> Speak description
+              </button>
+            </label>
+            <textarea name="description" id="descInput" class="form-control" rows="5"
                       placeholder="Describe your suggestion in detail (at least 20 characters)..."
                       required minlength="20">{{ description|default('') }}</textarea>
-          <div class="d-flex gap-2 mt-2">
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="aiImprove()">
-              <i class="fas fa-magic me-1"></i>AI Improve
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-info" onclick="findDuplicates()">
-              <i class="fas fa-search me-1"></i>Check Duplicates
-            </button>
+            <div class="d-flex gap-2 mt-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="aiImprove()">
+                <i class="fas fa-magic me-1"></i>AI Improve
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-info" onclick="findDuplicates()">
+                <i class="fas fa-search me-1"></i>Check Duplicates
+              </button>
+            </div>
+            <div id="duplicateWarning" class="mt-2" style="display:none"></div>
           </div>
-          <div id="duplicateWarning" class="mt-2" style="display:none"></div>
-          </div>
+
           <div class="mb-3">
             <label class="form-label fw-semibold"><i class="fas fa-paperclip me-1"></i>Attachments</label>
             <div class="upload-zone" id="uploadZone">
@@ -77,6 +130,7 @@
               <div id="fileList" class="mt-2"></div>
             </div>
           </div>
+
           <div class="mb-4">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous">
@@ -86,8 +140,9 @@
               </label>
             </div>
           </div>
+
           <div class="d-flex gap-3">
-{% include '_ml_features.html' %}
+            {% include '_ml_features.html' %}
             <button type="submit" class="btn btn-primary px-5">
               <i class="fas fa-paper-plane me-2"></i>Submit Suggestion
             </button>
@@ -98,92 +153,185 @@
     </div>
   </div>
 </div>
+
+<style>
+.voice-card {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 20px; padding: 20px; color: #fff;
+  box-shadow: 0 8px 28px rgba(99,102,241,0.35);
+}
+.voice-card-inner { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.voice-icon-wrap { position:relative; flex-shrink:0; }
+.voice-btn {
+  width:64px; height:64px; border-radius:50%;
+  background:rgba(255,255,255,0.2); border:2px solid rgba(255,255,255,0.5);
+  color:#fff; font-size:1.5rem;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.2s; position:relative; z-index:2;
+}
+.voice-btn:hover { background:rgba(255,255,255,0.3); transform:scale(1.08); }
+.voice-btn.listening { background:#ef4444; border-color:#ef4444; animation:mic-pulse 1.2s ease-in-out infinite; }
+@keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 12px rgba(239,68,68,0)} }
+.ring { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); border-radius:50%; border:2px solid rgba(255,255,255,0.4); animation:ring-expand 1.5s ease-out infinite; }
+.ring1{width:80px;height:80px;animation-delay:0s}
+.ring2{width:100px;height:100px;animation-delay:0.3s}
+.ring3{width:120px;height:120px;animation-delay:0.6s}
+@keyframes ring-expand { 0%{opacity:1;transform:translate(-50%,-50%) scale(0.8)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)} }
+.voice-info { flex-grow:1; min-width:0; }
+.voice-title { font-weight:700; font-size:1rem; margin-bottom:2px; }
+.voice-subtitle { font-size:0.82rem; opacity:0.85; }
+.voice-transcript { margin-top:6px; background:rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-style:italic; max-height:80px; overflow-y:auto; }
+.voice-lang { flex-shrink:0; }
+.voice-help { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.2); font-size:0.78rem; opacity:0.9; }
+.mic-field-btn { background:none; border:1px solid #6366f1; color:#6366f1; border-radius:8px; padding:3px 10px; font-size:0.75rem; cursor:pointer; transition:all 0.15s; }
+.mic-field-btn:hover { background:#ede9fe; }
+.mic-field-btn.active { background:#ef4444; border-color:#ef4444; color:#fff; }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-async function aiCategorize() {
-  const title = document.querySelector('[name=title]').value;
-  const desc  = document.querySelector('[name=description]').value;
-  if (!title && !desc) { alert('Please enter a title or description first.'); return; }
-  const res  = await fetch('/api/ai/categorize', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({title, description: desc})
-  });
-  const data = await res.json();
-  if (data.category) {
-    document.querySelector('[name=category]').value = data.category;
-    document.querySelector('[name=priority]').value = data.priority;
-    alert(`AI suggests: Category = ${data.category}, Priority = ${data.priority}\n\nReason: ${data.reason||''}`);
+/* ── VOICE INPUT — Web Speech API ── */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening  = false;
+let voiceMode    = null;
+let finalTranscript = '';
+
+function initRecognition() {
+  if (!SpeechRecognition) {
+    document.getElementById('voiceStatus').textContent = '⚠️ Not supported. Please use Chrome or Edge.';
+    document.getElementById('voiceBtn').disabled = true;
+    return null;
+  }
+  const r = new SpeechRecognition();
+  r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+  r.onstart = () => {
+    isListening = true; finalTranscript = '';
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceIcon').className = 'fas fa-stop';
+    document.getElementById('voiceRings').style.display = 'block';
+    document.getElementById('voiceTranscript').style.display = 'block';
+    document.getElementById('voiceTranscript').textContent = 'Listening...';
+    document.getElementById('voiceStatus').textContent = '🔴 Recording — speak now. Click stop when done.';
+  };
+  r.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t + ' ';
+      else interim = t;
+    }
+    document.getElementById('voiceTranscript').textContent = (finalTranscript + interim) || 'Listening...';
+  };
+  r.onerror = (e) => {
+    const msgs = {'not-allowed':'❌ Mic access denied.','no-speech':'🔇 No speech detected.','audio-capture':'❌ No mic found.'};
+    document.getElementById('voiceStatus').textContent = msgs[e.error] || `⚠️ Error: ${e.error}`;
+    stopVoice();
+  };
+  r.onend = () => { if (finalTranscript.trim()) applyTranscript(finalTranscript.trim()); stopVoice(); };
+  return r;
+}
+
+function toggleVoice() {
+  if (isListening) { stopVoice(); return; }
+  voiceMode = 'smart';
+  recognition = initRecognition();
+  if (!recognition) return;
+  recognition.lang = document.getElementById('voiceLang').value;
+  recognition.start();
+}
+
+function voiceField(field) {
+  if (isListening) { stopVoice(); return; }
+  voiceMode = field;
+  recognition = initRecognition();
+  if (!recognition) return;
+  recognition.continuous = false;
+  recognition.lang = document.getElementById('voiceLang').value;
+  document.querySelector(`[onclick="voiceField('${field}')"]`).classList.add('active');
+  recognition.start();
+}
+
+function stopVoice() {
+  isListening = false;
+  if (recognition) { try { recognition.stop(); } catch(e){} }
+  document.getElementById('voiceBtn').classList.remove('listening');
+  document.getElementById('voiceIcon').className = 'fas fa-microphone';
+  document.getElementById('voiceRings').style.display = 'none';
+  document.querySelectorAll('.mic-field-btn').forEach(b => b.classList.remove('active'));
+  if (!finalTranscript.trim()) {
+    document.getElementById('voiceStatus').textContent = 'Click the mic and speak — VoiceUp will fill the form for you';
+    document.getElementById('voiceTranscript').style.display = 'none';
   }
 }
 
+function applyTranscript(text) {
+  const titleInput = document.getElementById('titleInput');
+  const descInput  = document.getElementById('descInput');
+  if (voiceMode === 'title') {
+    titleInput.value = cap(text);
+    document.getElementById('voiceStatus').textContent = '✅ Title filled! You can edit it above.';
+  } else if (voiceMode === 'description') {
+    descInput.value = cap(text);
+    document.getElementById('voiceStatus').textContent = '✅ Description filled!';
+  } else {
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    titleInput.value = cap(sentences[0].trim());
+    const rest = sentences.slice(1).join(' ').trim();
+    if (rest) descInput.value = cap(rest);
+    else if (text.length > 60) { titleInput.value = cap(text.substring(0,60).trim()); descInput.value = cap(text.substring(60).trim()); }
+    document.getElementById('voiceStatus').textContent = '✅ Done! Review and submit.';
+  }
+  document.getElementById('voiceTranscript').textContent = text;
+}
+
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+</script>
+<script>
 async function aiImprove() {
-  const ta   = document.querySelector('[name=description]');
+  const ta = document.querySelector('[name=description]');
   const text = ta.value.trim();
   if (!text || text.length < 10) { alert('Please write a description first.'); return; }
   const btn = event.target;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Improving...';
-  btn.disabled = true;
-  const res  = await fetch('/api/ai/improve', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({text})
-  });
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Improving...'; btn.disabled = true;
+  const res = await fetch('/api/ai/improve', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
   const data = await res.json();
-  if (data.improved) {
-    if (confirm('Replace your text with AI improved version?\n\n' + data.improved)) {
-      ta.value = data.improved;
-    }
-  }
-  btn.innerHTML = '<i class="fas fa-magic me-1"></i>AI Improve';
-  btn.disabled = false;
+  if (data.improved && confirm('Replace with AI improved version?\n\n' + data.improved)) ta.value = data.improved;
+  btn.innerHTML = '<i class="fas fa-magic me-1"></i>AI Improve'; btn.disabled = false;
 }
 
 async function findDuplicates() {
   const title = document.querySelector('[name=title]').value;
   const desc  = document.querySelector('[name=description]').value;
   if (!title && !desc) { alert('Please enter a title or description first.'); return; }
-  const res  = await fetch('/api/ai/duplicates', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({title, description: desc})
-  });
+  const res  = await fetch('/api/ai/duplicates', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,description:desc})});
   const data = await res.json();
   const box  = document.getElementById('duplicateWarning');
   if (data.duplicates && data.duplicates.length > 0) {
     let html = '<div class="alert alert-warning"><strong><i class="fas fa-exclamation-triangle me-2"></i>Similar suggestions found:</strong><ul class="mb-0 mt-2">';
-    data.duplicates.forEach(d => {
-      html += `<li>${d.title} <span class="badge bg-warning text-dark">${d.similarity}% similar</span></li>`;
-    });
-    html += '</ul><small class="d-block mt-1">Consider upvoting existing suggestions instead of creating duplicates.</small></div>';
+    data.duplicates.forEach(d => { html += `<li>${d.title} <span class="badge bg-warning text-dark">${d.similarity}% similar</span></li>`; });
+    html += '</ul><small class="d-block mt-1">Consider upvoting instead.</small></div>';
     box.innerHTML = html;
-    box.style.display = 'block';
   } else {
-    box.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>No similar suggestions found. Your suggestion appears to be unique!</div>';
-    box.style.display = 'block';
+    box.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>No similar suggestions found!</div>';
   }
+  box.style.display = 'block';
 }
 </script>
 <script>
-const fileInput = document.getElementById('fileInput');
-const fileList  = document.getElementById('fileList');
+const fileInput  = document.getElementById('fileInput');
+const fileList   = document.getElementById('fileList');
 const uploadZone = document.getElementById('uploadZone');
-
 fileInput.addEventListener('change', showFiles);
-
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('drag-over');
-  fileInput.files = e.dataTransfer.files;
-  showFiles();
-});
-
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); fileInput.files = e.dataTransfer.files; showFiles(); });
 function showFiles() {
   fileList.innerHTML = '';
   Array.from(fileInput.files).forEach(f => {
-    const size = (f.size/1024).toFixed(1);
-    fileList.innerHTML += `<div class="file-item"><i class="fas fa-file me-2"></i>${f.name} <small class="text-muted">(${size} KB)</small></div>`;
+    fileList.innerHTML += `<div class="file-item"><i class="fas fa-file me-2"></i>${f.name} <small class="text-muted">(${(f.size/1024).toFixed(1)} KB)</small></div>`;
   });
 }
 </script>
