@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-title" content="VoiceUp">
     {% block extra_css %}{% endblock %}
 <link href="{{ url_for('static', filename='css/v5.css') }}" rel="stylesheet">
-</head>
+{% include '_pwa_head.html' %}
 </head>
 <body>
 

@@ -1,0 +1,24 @@
+{# ═══════════════════════════════════════════════════════════
+   VoiceUp PWA Tags — include inside <head> in base.html
+   and dashboard.html
+   ═══════════════════════════════════════════════════════════ #}
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="VoiceUp">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        console.log('✅ VoiceUp SW registered, scope:', reg.scope);
+      })
+      .catch(err => {
+        console.log('SW registration failed:', err);
+      });
+  });
+}
+</script>
