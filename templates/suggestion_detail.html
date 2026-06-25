@@ -60,13 +60,55 @@
       <div class="card-body p-4">
         {% if responses %}
           {% for r in responses %}
-          <div class="response-bubble mb-3">
+          <div class="response-bubble mb-3" id="response-{{ r.id }}">
             <div class="d-flex align-items-center mb-1">
               <div class="admin-avatar me-2">{{ r.admin_name[0]|upper }}</div>
               <strong>{{ r.admin_name }}</strong>
               <small class="text-muted ms-2">{{ r.created_at.strftime('%b %d, %Y %H:%M') if r.created_at else '' }}</small>
+              <button class="btn btn-sm btn-link text-primary ms-auto p-0"
+                      onclick="toggleReply('reply-form-{{ r.id }}')">
+                <i class="fas fa-reply me-1"></i>Reply
+              </button>
             </div>
-            <p class="mb-0">{{ r.response_text }}</p>
+            <p class="mb-2">{{ r.response_text }}</p>
+
+            <!-- Threaded replies to this response -->
+            {% if comments_by_response.get(r.id) %}
+            <div class="ms-4 mt-2 border-start border-2 border-primary ps-3">
+              {% for c in comments_by_response[r.id] %}
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="admin-avatar" style="width:28px;height:28px;font-size:0.7rem;
+                  background:linear-gradient(135deg,#3b82f6,#6366f1);flex-shrink:0;">
+                  {{ c.author[0]|upper }}
+                </div>
+                <div style="background:#f1f5f9;border-radius:10px;padding:8px 12px;flex-grow:1;">
+                  <div style="font-size:0.78rem;font-weight:700;color:#374151;">
+                    {{ c.author }}
+                    <span class="text-muted fw-normal ms-2" style="font-size:0.72rem;">
+                      {{ c.created_at.strftime('%b %d, %H:%M') if c.created_at else '' }}
+                    </span>
+                  </div>
+                  <div style="font-size:0.85rem;color:#475569;margin-top:2px;">{{ c.body }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Reply form (hidden by default) -->
+            <div id="reply-form-{{ r.id }}" style="display:none;" class="ms-4 mt-2">
+              <form method="POST" action="{{ url_for('add_comment', suggestion_id=suggestion.suggestion_id) }}">
+                <input type="hidden" name="reply_to_response_id" value="{{ r.id }}">
+                <div class="input-group input-group-sm">
+                  <input type="text" name="body" class="form-control"
+                         placeholder="Reply to {{ r.admin_name }}..." required
+                         style="border-radius:8px 0 0 8px;">
+                  <button type="submit" class="btn btn-primary btn-sm" style="border-radius:0 8px 8px 0;">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
           {% endfor %}
         {% else %}
@@ -151,8 +193,8 @@
     <h6 class="fw-bold mb-0"><i class="fas fa-comment-dots me-2 text-info"></i>Discussion</h6>
   </div>
   <div class="card-body p-4">
-    {% if suggestion.get('comments') %}
-      {% for c in suggestion.get('comments', []) %}
+    {% if general_comments %}
+      {% for c in general_comments %}
       <div class="comment-bubble mb-3">
         <div class="d-flex align-items-center mb-1">
           <div class="admin-avatar me-2" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">
@@ -185,6 +227,19 @@ function toggleVote(sid) {
       document.getElementById('voteCount').textContent = data.count;
       document.getElementById('voteBtn').classList.toggle('voted', data.voted);
     });
+}
+
+function toggleReply(formId) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  const visible = form.style.display !== 'none';
+  // Hide all reply forms first
+  document.querySelectorAll('[id^="reply-form-"]').forEach(f => f.style.display = 'none');
+  // Show this one if it was hidden
+  if (!visible) {
+    form.style.display = 'block';
+    form.querySelector('input[name="body"]').focus();
+  }
 }
 </script>
 {% endblock %}
