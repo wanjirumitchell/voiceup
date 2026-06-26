@@ -29,6 +29,17 @@
   <div id="mlRecList"></div>
 </div>
 
+<!-- Resolution Time Prediction -->
+<div id="mlResolutionBox" style="display:none;background:#f0fdf4;border-radius:12px;border-left:4px solid #10b981;padding:12px 16px;margin-bottom:12px;">
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <span>📅</span>
+    <span class="fw-semibold">Estimated resolution:</span>
+    <span id="mlResolutionDays" class="fw-bold text-success"></span>
+    <span id="mlResolutionLabel" class="text-muted small"></span>
+    <span id="mlResolutionConf" class="badge bg-light text-muted ms-1" style="font-size:0.68rem;"></span>
+  </div>
+</div>
+
 <script>
 let mlTimeout = null;
 let suggestedPrio = '';
@@ -36,13 +47,16 @@ let suggestedPrio = '';
 function runMLChecks() {
   clearTimeout(mlTimeout);
   mlTimeout = setTimeout(async () => {
-    const title = document.querySelector('[name=title]')?.value?.trim();
-    const desc  = document.querySelector('[name=description]')?.value?.trim();
+    const title    = document.querySelector('[name=title]')?.value?.trim();
+    const desc     = document.querySelector('[name=description]')?.value?.trim();
+    const category = document.querySelector('[name=category]')?.value || 'other';
+    const priority = document.querySelector('[name=priority]')?.value || 'medium';
     if (!title || title.length < 5) return;
     await Promise.all([
       checkSpamML(title, desc),
       predictPriorityML(title, desc),
-      getRecommendationsML(title, desc)
+      getRecommendationsML(title, desc),
+      predictResolutionML(title, desc, category, priority)
     ]);
   }, 1200);
 }
@@ -108,18 +122,40 @@ async function getRecommendationsML(title, desc) {
   } catch(e) { console.log('Rec error:', e); }
 }
 
+async function predictResolutionML(title, desc, category, priority) {
+  try {
+    const res  = await fetch('/api/ml/predict-resolution', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({title, description: desc, category, priority})
+    });
+    const data = await res.json();
+    const box  = document.getElementById('mlResolutionBox');
+    document.getElementById('mlResolutionDays').textContent  = `~${data.days} day${data.days !== 1 ? 's' : ''}`;
+    document.getElementById('mlResolutionLabel').textContent = data.label;
+    document.getElementById('mlResolutionConf').textContent  = `${data.confidence} confidence`;
+    box.style.display = 'block';
+  } catch(e) { console.log('Resolution prediction error:', e); }
+}
+
 function applyMLPriority() {
   const sel = document.querySelector('[name=priority]');
   if (sel && suggestedPrio) {
     sel.value = suggestedPrio;
     document.getElementById('mlPrioritySuggestion').style.display = 'none';
+    // Re-run resolution prediction with updated priority
+    runMLChecks();
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   const t = document.querySelector('[name=title]');
   const d = document.querySelector('[name=description]');
+  const c = document.querySelector('[name=category]');
+  const p = document.querySelector('[name=priority]');
   if (t) t.addEventListener('input', runMLChecks);
   if (d) d.addEventListener('input', runMLChecks);
+  if (c) c.addEventListener('change', runMLChecks);
+  if (p) p.addEventListener('change', runMLChecks);
 });
 </script>
