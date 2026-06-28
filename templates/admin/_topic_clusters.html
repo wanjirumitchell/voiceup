@@ -1,0 +1,166 @@
+{# ═══════════════════════════════════════════════════════════════════
+   VoiceUp Topic Clustering Card
+   Save as: templates/admin/_topic_clusters.html
+   Include in admin dashboard or sentiment dashboard with:
+   {% include 'admin/_topic_clusters.html' %}
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<div class="card border-0 shadow-sm mt-4" style="border-radius:20px;overflow:hidden;">
+  <div class="card-header border-0 pt-4 px-4 pb-3"
+       style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h6 class="fw-bold mb-1">🧩 Topic Clustering</h6>
+        <p class="mb-0 small" style="opacity:0.85;">
+          AI groups similar suggestions into themes — what are students really talking about?
+        </p>
+      </div>
+      <button class="btn btn-sm btn-light" onclick="loadTopicClusters()"
+              style="border-radius:8px;font-size:0.78rem;">
+        <i class="fas fa-sync-alt me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body p-4" id="topicClusterBody">
+    <div class="text-center text-muted py-4" id="topicClusterLoading">
+      <i class="fas fa-spinner fa-spin me-2"></i>Analysing themes...
+    </div>
+  </div>
+</div>
+
+<style>
+.cluster-card {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 14px; padding: 18px 20px;
+  margin-bottom: 12px; transition: transform 0.2s, box-shadow 0.2s;
+}
+.cluster-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+}
+.cluster-icon {
+  font-size: 2rem; width: 52px; height: 52px;
+  background: #f1f5f9; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cluster-theme {
+  font-weight: 700; font-size: 1rem; color: #1e293b;
+  margin-bottom: 4px;
+}
+.cluster-count-bar {
+  height: 6px; background: #e2e8f0; border-radius: 3px;
+  margin: 8px 0; overflow: hidden;
+}
+.cluster-count-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transition: width 0.8s ease;
+}
+.cluster-keyword {
+  display: inline-block; background: #ede9fe; color: #6366f1;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 0.72rem; font-weight: 600; margin: 2px;
+}
+.cluster-suggestion-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; border-top: 1px solid #f1f5f9;
+  font-size: 0.8rem; color: #475569; text-decoration: none;
+}
+.cluster-suggestion-item:hover { color: #6366f1; }
+.cluster-suggestion-item .vote-pill {
+  background: #f1f5f9; border-radius: 10px;
+  padding: 2px 8px; font-size: 0.7rem;
+  font-weight: 700; color: #64748b; flex-shrink: 0;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.sd-pending      { background: #f59e0b; }
+.sd-under_review { background: #3b82f6; }
+.sd-resolved     { background: #10b981; }
+.sd-rejected     { background: #ef4444; }
+</style>
+
+<script>
+async function loadTopicClusters() {
+  const body = document.getElementById('topicClusterBody');
+  body.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>Analysing themes...</div>';
+
+  try {
+    const res  = await fetch('/admin/api/topic-clusters');
+    const data = await res.json();
+
+    if (!data.clusters || data.clusters.length === 0) {
+      body.innerHTML = `
+        <div class="text-center text-muted py-4">
+          <i class="fas fa-layer-group fa-2x mb-2 opacity-50"></i>
+          <p class="small">Not enough suggestions yet for clustering. Submit at least 5 suggestions first.</p>
+        </div>`;
+      return;
+    }
+
+    const maxCount = Math.max(...data.clusters.map(c => c.count));
+    const statusColors = {
+      pending: '#f59e0b', under_review: '#3b82f6',
+      resolved: '#10b981', rejected: '#ef4444'
+    };
+
+    const summary = `
+      <div class="mb-3 p-3 rounded" style="background:#f8fafc;border-radius:10px;">
+        <div class="text-muted small">
+          <strong style="color:#6366f1;">${data.total}</strong> suggestions grouped into
+          <strong style="color:#6366f1;">${data.cluster_count}</strong> themes
+          — sorted by most discussed
+        </div>
+      </div>`;
+
+    const cards = data.clusters.map((c, idx) => {
+      const barWidth  = Math.round((c.count / maxCount) * 100);
+      const keywords  = (c.keywords || [])
+        .map(k => `<span class="cluster-keyword">${k}</span>`).join('');
+      const items = (c.suggestions || []).map(s => `
+        <a href="/admin/suggestion/${s.id}" class="cluster-suggestion-item">
+          <div class="status-dot sd-${s.status}"></div>
+          <span style="flex-grow:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.title)}</span>
+          <span class="vote-pill">👍 ${s.vote_count}</span>
+        </a>`).join('');
+
+      return `
+        <div class="cluster-card">
+          <div class="d-flex align-items-start gap-3">
+            <div class="cluster-icon">${c.icon}</div>
+            <div style="flex-grow:1;min-width:0;">
+              <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                <div class="cluster-theme">${escHtml(c.theme_name)}</div>
+                <span style="background:#ede9fe;color:#6366f1;padding:3px 10px;
+                  border-radius:20px;font-size:0.75rem;font-weight:700;flex-shrink:0;">
+                  ${c.count} suggestion${c.count !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div class="cluster-count-bar">
+                <div class="cluster-count-fill" style="width:${barWidth}%"></div>
+              </div>
+              <div class="mb-2">${keywords}</div>
+              ${items}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    body.innerHTML = summary + cards;
+  } catch(e) {
+    body.innerHTML = '<div class="text-center text-danger py-3 small">Could not load topic clusters.</div>';
+  }
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+// Load automatically on page load
+document.addEventListener('DOMContentLoaded', loadTopicClusters);
+</script>
