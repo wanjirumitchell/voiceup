@@ -1,0 +1,246 @@
+{# ═══════════════════════════════════════════════════════════════════
+   VoiceUp i18n — English / Swahili Language Toggle
+   Save as: templates/_i18n.html
+   Include at the bottom of base.html and dashboard.html:
+   {% include '_i18n.html' %}
+   ═══════════════════════════════════════════════════════════════════ #}
+
+<style>
+.lang-toggle {
+  display: flex; align-items: center; gap: 0;
+  border: 1.5px solid rgba(255,255,255,0.35);
+  border-radius: 20px; overflow: hidden;
+  font-size: 0.72rem; font-weight: 700;
+}
+.lang-btn {
+  padding: 3px 10px; cursor: pointer; border: none;
+  background: transparent; color: rgba(255,255,255,0.7);
+  transition: all 0.2s; line-height: 1.4;
+}
+.lang-btn.active {
+  background: rgba(255,255,255,0.25); color: #fff;
+}
+.lang-btn:hover:not(.active) { color: #fff; }
+</style>
+
+<script>
+// ── VoiceUp i18n System ──────────────────────────────────────────
+// Translations: EN → SW (Swahili)
+const TRANSLATIONS = {
+  // Navigation
+  'Home':             'Nyumbani',
+  'My Suggestions':   'Mapendekezo Yangu',
+  'Public Board':     'Ubao wa Umma',
+  'Leaderboard':      'Orodha ya Washindi',
+  'Notifications':    'Arifa',
+  'Profile':          'Wasifu',
+  'Logout':           'Toka',
+  'Dashboard':        'Dashibodi',
+  'Submit':           'Wasilisha',
+  'Cancel':           'Ghairi',
+  'Back':             'Rudi',
+  'Save':             'Hifadhi',
+  'Search':           'Tafuta',
+  'Settings':         'Mipangilio',
+
+  // Submit page
+  'Submit a Suggestion':   'Wasilisha Pendekezo',
+  'Use a Template':        'Tumia Kiolezo',
+  'Browse Templates':      'Vinjari Violezo',
+  'Title':                 'Kichwa',
+  'Category':              'Kategoria',
+  'Priority':              'Kipaumbele',
+  'Description':           'Maelezo',
+  'Attachments':           'Viambatisho',
+  'Submit Suggestion':     'Wasilisha Pendekezo',
+  'Submit anonymously':    'Wasilisha bila jina',
+  'Your name will not be shown publicly': 'Jina lako halitaonekana hadharani',
+  'AI Improve':            'Boresha kwa AI',
+  'Check Duplicates':      'Angalia Marudio',
+
+  // Categories
+  'Academics':        'Masomo',
+  'Facilities':       'Miundombinu',
+  'Welfare':          'Ustawi',
+  'Technology':       'Teknolojia',
+  'Administration':   'Utawala',
+  'Sports':           'Michezo',
+  'Other':            'Nyingine',
+
+  // Priorities
+  'Low':       'Chini',
+  'Medium':    'Wastani',
+  'High':      'Juu',
+  'Urgent':    'Haraka',
+
+  // Statuses
+  'Pending':       'Inasubiri',
+  'Under Review':  'Inachunguzwa',
+  'Resolved':      'Imeshughulikiwa',
+  'Rejected':      'Imekataliwa',
+  'Anonymous':     'Bila Jina',
+
+  // Dashboard
+  'Welcome back':               'Karibu tena',
+  'Your voice matters':         'Sauti yako ina umuhimu',
+  'Submit New Idea':            'Wasilisha Wazo Jipya',
+  'Track Suggestion':           'Fuatilia Pendekezo',
+  'My Ideas':                   'Mawazo Yangu',
+  'Total Suggestions':          'Jumla ya Mapendekezo',
+  'Resolved':                   'Imeshughulikiwa',
+  'Pending':                    'Inasubiri',
+  'Votes Received':             'Kura Zilizopokelewa',
+  'Ask VoiceBot':               'Uliza VoiceBot',
+  'Quick Actions':              'Vitendo vya Haraka',
+  'Recent Activity':            'Shughuli za Hivi Karibuni',
+  'View All':                   'Angalia Zote',
+
+  // Suggestion detail
+  'Admin Responses':            'Majibu ya Msimamizi',
+  'No responses yet. Check back soon.': 'Hakuna majibu bado. Angalia baadaye.',
+  'Rate This Resolution':       'Kadiria Utatuzi Huu',
+  'Submit Rating':              'Wasilisha Kadirio',
+  'Progress Timeline':          'Ratiba ya Maendeleo',
+  'Details':                    'Maelezo',
+  'Tracking ID':                'Nambari ya Ufuatiliaji',
+  'Due Date':                   'Tarehe ya Mwisho',
+  'Votes':                      'Kura',
+  'Discussion':                 'Mjadala',
+  'Write a comment...':         'Andika maoni...',
+  'Reply':                      'Jibu',
+
+  // Notifications
+  'No notifications yet':       'Hakuna arifa bado',
+  'Mark all read':              'Weka zote zimesomwa',
+
+  // Public Board
+  'Top Voted':                  'Zilizopata Kura Nyingi',
+  'Recent':                     'Za Hivi Karibuni',
+  'Share Your Idea':            'Shiriki Wazo Lako',
+  'No suggestions found':       'Hakuna mapendekezo yaliyopatikana',
+  'Be the first to share an idea!': 'Kuwa wa kwanza kushiriki wazo!',
+
+  // Leaderboard
+  'Student Leaderboard':        'Orodha ya Washindi wa Wanafunzi',
+  'Top contributors making a difference': 'Wachangiaji wakuu wanaofanya mabadiliko',
+  'Your Current Rank':          'Nafasi Yako ya Sasa',
+  'Keep submitting ideas to climb higher!': 'Endelea kutuma mawazo kupanda juu!',
+  'Submit Idea':                'Wasilisha Wazo',
+  'Ideas':                      'Mawazo',
+
+  // Profile
+  'Edit Profile':               'Hariri Wasifu',
+  'Full Name':                  'Jina Kamili',
+  'Student ID':                 'Nambari ya Mwanafunzi',
+  'Phone':                      'Simu',
+  'Department':                 'Idara',
+  'Bio':                        'Maelezo Mafupi',
+  'Profile Photo':              'Picha ya Wasifu',
+  'Save Changes':               'Hifadhi Mabadiliko',
+  'Change Password':            'Badilisha Nenosiri',
+  'Current Password':           'Nenosiri la Sasa',
+  'New Password':               'Nenosiri Jipya',
+  'Confirm Password':           'Thibitisha Nenosiri',
+  'Update Password':            'Sasisha Nenosiri',
+  'Quick Links':                'Viungo vya Haraka',
+  'Total Ideas':                'Jumla ya Mawazo',
+
+  // Search
+  'Search Suggestions':         'Tafuta Mapendekezo',
+  'No results found':           'Hakuna matokeo yaliyopatikana',
+
+  // Voice input
+  'Speak Your Suggestion':      'Sema Pendekezo Lako',
+  'Click the mic and speak':    'Bonyeza maikrofoni na uzungumze',
+  'Speak title':                'Sema kichwa',
+  'Speak description':          'Sema maelezo',
+
+  // ML features
+  'Estimated resolution':       'Makadirio ya Utatuzi',
+  'Spam Detected!':             'Taka Imegunduliwa!',
+  'ML suggests priority':       'ML inapendekeza kipaumbele',
+  'Similar suggestions':        'Mapendekezo yanayofanana',
+
+  // General
+  'Submitted':                  'Imewasilishwa',
+  'Votes':                      'Kura',
+  'submitted':                  'imewasilishwa',
+  'ideas':                      'mawazo',
+  'Loading...':                 'Inapakia...',
+};
+
+// Reverse map for SW→EN
+const TRANSLATIONS_SW_EN = Object.fromEntries(
+  Object.entries(TRANSLATIONS).map(([en, sw]) => [sw, en])
+);
+
+let currentLang = localStorage.getItem('voiceup_lang') || 'en';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('voiceup_lang', lang);
+
+  const map = lang === 'sw' ? TRANSLATIONS : TRANSLATIONS_SW_EN;
+
+  // Update toggle buttons with inline styles
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.dataset.lang === lang;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? 'rgba(255,255,255,0.25)' : 'transparent';
+    btn.style.color      = isActive ? '#fff' : 'rgba(255,255,255,0.7)';
+  });
+
+  // Walk all text nodes in the page
+  walkTextNodes(document.body, map);
+
+  // Update placeholders
+  document.querySelectorAll('[placeholder]').forEach(el => {
+    const orig = el.dataset.origPlaceholder || el.getAttribute('placeholder');
+    if (!el.dataset.origPlaceholder) el.dataset.origPlaceholder = orig;
+    el.setAttribute('placeholder', map[orig] || orig);
+  });
+}
+
+function walkTextNodes(node, map) {
+  if (!node) return;
+
+  // Skip script, style, and input tags
+  if (['SCRIPT','STYLE','INPUT','TEXTAREA','CODE'].includes(node.nodeName)) return;
+
+  if (node.nodeType === Node.TEXT_NODE) {
+    const trimmed = node.textContent.trim();
+    if (trimmed && map[trimmed]) {
+      // Preserve surrounding whitespace
+      node.textContent = node.textContent.replace(trimmed, map[trimmed]);
+    }
+    return;
+  }
+
+  // Skip hidden elements and toast container
+  if (node.id === 'toastContainer') return;
+
+  node.childNodes.forEach(child => walkTextNodes(child, map));
+}
+
+function toggleLang(lang) {
+  applyLanguage(lang);
+}
+
+// Apply saved language AFTER everything else loads
+window.addEventListener('load', () => {
+  // Always mark correct button as active
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const isActive = btn.dataset.lang === currentLang;
+    btn.classList.toggle('active', isActive);
+    if (isActive) {
+      btn.style.background = 'rgba(255,255,255,0.25)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'rgba(255,255,255,0.7)';
+    }
+  });
+  // Apply Swahili if saved
+  if (currentLang === 'sw') applyLanguage('sw');
+});
+</script>
